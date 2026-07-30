@@ -11,12 +11,10 @@ public class ContainerParserFuzzer {
                     try {
                         reader.readResource(entry.getName());
                     } catch (Exception e) {
-                        // Ignore resource-level exceptions to continue fuzzing other entries
                     }
                 }
             }
         } catch (Exception e) {
-            // Ignore expected container formatting exceptions
         }
     }
 }

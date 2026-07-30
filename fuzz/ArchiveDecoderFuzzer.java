@@ -13,14 +13,11 @@ public class ArchiveDecoderFuzzer {
 
         try {
             if ((type & 1) == 0) {
-                // Fuzz Rle decompression
                 RleCompression.decompress(payload, 1024 * 1024);
             } else {
-                // Fuzz Lz77 decompression
                 Lz77Compression.decompress(payload, 1024 * 1024);
             }
         } catch (Exception e) {
-            // Ignore expected decompressor formatting issues
         }
     }
 }

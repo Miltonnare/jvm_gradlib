@@ -5,7 +5,6 @@ public class MetadataParserFuzzer {
         try {
             BinaryMetadataReader.read(data);
         } catch (Exception e) {
-            // Ignore expected BSM formatting exceptions
         }
     }
 }

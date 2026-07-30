@@ -18,14 +18,13 @@ public class StreamReaderFuzzer {
              var bitStream = new BitInputStream(checksumming)) {
 
             while (true) {
-                int bitsCount = bitStream.readBits(3); // Read 3 bits at a time
+                int bitsCount = bitStream.readBits(3);
                 if (bitsCount == -1) {
                     break;
                 }
             }
             checksumming.getChecksum();
         } catch (Exception e) {
-            // Ignore expected stream boundaries exceptions
         }
     }
 }

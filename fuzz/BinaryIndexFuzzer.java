@@ -5,7 +5,6 @@ public class BinaryIndexFuzzer {
         try {
             ContainerIndex.parse(data);
         } catch (Exception e) {
-            // Ignore expected index decoding exceptions
         }
     }
 }

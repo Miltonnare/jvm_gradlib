@@ -5,7 +5,6 @@ public class KeyRingParserFuzzer {
         try {
             AuraKeyRing.parse(data);
         } catch (Exception e) {
-            // Ignore expected keyring formatting and checksum exceptions
         }
     }
 }

@@ -10,7 +10,6 @@ public class CssStyleParserFuzzer {
             CssStyleParser parser = new CssStyleParser();
             parser.parse(css);
         } catch (Exception e) {
-            // Ignore expected CSS parsing exceptions
         }
     }
 }

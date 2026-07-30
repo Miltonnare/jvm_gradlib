@@ -34,7 +34,6 @@ public class ObjectGraphFuzzer {
                 hr.render(doc);
             }
         } catch (Exception e) {
-            // Ignore syntax, parser, validation and compilation exceptions
         }
     }
 }

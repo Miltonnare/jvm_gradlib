@@ -9,7 +9,6 @@ public class QueryParserFuzzer {
             String expr = new String(data, java.nio.charset.StandardCharsets.UTF_8);
             new QueryExpression(expr);
         } catch (Exception e) {
-            // Ignore expected lexer/parser syntax errors
         }
     }
 }

@@ -57,11 +57,8 @@ for fuzzer in "${FUZZERS[@]}"; do
   # Create wrapper executable
   cat << EOF > "$OUT/$fuzzer"
 #!/bin/sh
-# Wrapper script to execute $fuzzer in ClusterFuzzLite
+# Wrapper script to execute $fuzzer
 this_dir=\$(dirname "\$0")
-if [ "\$benchmarking" = "1" ]; then
-  exit 0
-fi
 exec jazzer \\
   --cp="\$this_dir/aura-fuzzers.jar" \\
   --target_class="$fuzzer" \\

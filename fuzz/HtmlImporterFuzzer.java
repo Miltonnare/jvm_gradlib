@@ -10,7 +10,6 @@ public class HtmlImporterFuzzer {
             HtmlImporter importer = new HtmlImporter();
             importer.importHtml(html);
         } catch (Exception e) {
-            // Ignore expected HTML parsing exceptions
         }
     }
 }

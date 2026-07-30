@@ -14,7 +14,6 @@ public class ConfigurationParserFuzzer {
             XonParser parser = new XonParser(lexer.tokenize());
             parser.parse();
         } catch (Exception e) {
-            // Ignore syntax/lexer exceptions
         }
     }
 }

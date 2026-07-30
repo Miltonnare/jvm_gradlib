@@ -10,7 +10,6 @@ public class MarkdownImporterFuzzer {
             MarkdownImporter importer = new MarkdownImporter();
             importer.importMarkdown(md);
         } catch (Exception e) {
-            // Ignore expected Markdown parsing exceptions
         }
     }
 }
