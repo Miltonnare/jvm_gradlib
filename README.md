@@ -1,55 +1,47 @@
 # Aura Document Processor (ADP)
 
-Aura Document Processor (ADP) is a high-performance, enterprise-grade JVM library designed for processing, transforming, validating, and replaying complex structured binary and textual data. 
-
-Built from the ground up to have zero runtime external dependencies, ADP operates with a strong security boundary, robust bounds checking, and stateful verification, making it ideal for sandboxed environments and fuzzing-driven development (OSS-Fuzz/ClusterFuzzLite).
+Aura Document Processor (ADP) is a Java library for processing, transforming, validating, and replaying structured binary and textual formats. ADP operates without runtime external dependencies.
 
 ## Key Features
 
-- **Binary Container Format (`.adc`)**: An archive container that packs structured binary metadata, layouts, assets, and replaying event streams with CRC32 integrity checks.
-- **Custom Configuration Language (Xon Config - `.xcf`)**: A clean JSON/YAML-like syntax parser with optional commas, line comments, type validation, and schema definitions.
-- **Binary Structured Metadata (BSM)**: A highly-efficient Tag-Length-Value (TLV) key-value serialization model supporting nested maps and lists.
-- **Sliding-Window Decompressions**: Custom, fuzzer-targeted implementations of sliding-window LZ77 and Run-Length Encoding (RLE) algorithms.
-- **Transformation Pipeline**: Modular, type-safe transform pipelines that run textual extraction and converts layout models to semantic HTML or Markdown.
-- **Document Graph Engine**: Computes nodes layout relationships, resolves inline calculation expressions, and performs topological cycle detection.
-- **State Machine Event Replays**: Interprets event logs in binary formats, replaying state transitions with guard conditions and context mutations.
+- **Binary Container Format (`.adc`)**: Pack structured binary metadata, layouts, assets, and event streams.
+- **Custom Configuration Language (Xon Config - `.xcf`)**: Text parser with support for comments, type validation, and schema definitions.
+- **Binary Structured Metadata (BSM)**: Tag-Length-Value (TLV) key-value serialization for maps and lists.
+- **Compression Codecs**: Implementation of sliding-window LZ77 and Run-Length Encoding (RLE) algorithms.
+- **Transformation Pipeline**: Convert document layouts into HTML or Markdown formats.
+- **Document Graph Engine**: Resolves layout node relationships and expressions.
+- **Event Replay Engine**: Replays context mutations from binary event logs.
 
-## Quick Start
+## Building the Project
 
-### Build Project
-Compile the library and run JUnit unit tests locally:
+Compile the library and run tests using the Gradle wrapper:
 ```bash
 ./gradlew build
 ```
 
-### Direct Javac Compile (Offline Fallback)
-For offline environments without Gradle wrapper distributions:
+### Direct Javac Compile (Alternative)
+To compile without Gradle:
 ```bash
-# Generate file list
 find src/main/java -name "*.java" > sources.txt
-# Compile classes
 mkdir -p build/classes/main
 javac -d build/classes/main @sources.txt
 ```
 
-### Run Fuzzing Harnesses
-ADP contains 8 pre-configured Jazzer fuzzing targets inside the `fuzz/` directory.
+## Running Fuzzing Targets
+The fuzz targets are located under the `fuzz/` directory.
 
-To run compilations and register targets in a ClusterFuzzLite environment:
+To build and package them offline:
 ```bash
 export OUT=/path/to/output
 export SRC=$(pwd)
 .clusterfuzzlite/build.sh
 ```
 
-## Documentation Sitemap
-For deeper engineering details, please consult:
-1. [ARCHITECTURE.md](Architecture.md) - Design patterns, packages, and data flows.
-2. [FORMAT_SPEC.md](FORMAT_SPEC.md) - Binary specs for ADC, BSM, and XCF syntax specs.
-3. [FUZZING.md](FUZZING.md) - Jazzer targets and corpus guide.
-4. [BUILD.md](BUILD.md) - Developer compilation and offline environment settings.
-5. [TESTING.md](TESTING.md) - JUnit test execution and coverage reports.
-6. [PROJECT_STRUCTURE.md](PROJECT_STRUCTURE.md) - Catalog of folders and source responsibilities.
-7. [SECURITY.md](SECURITY.md) - Bounds validation, stack protection, and cryptography interfaces.
-8. [CONTRIBUTING.md](CONTRIBUTING.md) - Developer onboarding, formatting, checkstyle, and PMD.
-9. [LICENSE](LICENSE) - Project licensing terms.
+## Documentation
+1. [Architecture Design](Architecture.md) - Project package structure and data flow.
+2. [Format Specifications](FORMAT_SPEC.md) - Specifications for ADC, BSM, and XCF formats.
+3. [Build Guide](BUILD.md) - Compilation instructions.
+4. [Testing Manual](TESTING.md) - Unit test and coverage guides.
+5. [Project Directory Structure](PROJECT_STRUCTURE.md) - File and folder layouts.
+6. [Security Policy](SECURITY.md) - Bounds checking and overflow protection details.
+7. [Contributing Guidelines](CONTRIBUTING.md) - Guidelines for code style and tests.

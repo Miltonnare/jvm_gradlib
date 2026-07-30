@@ -4,32 +4,42 @@ Below is a catalog of files and folders in the Aura Document Processor repositor
 
 ```
 project/
-├── .clusterfuzzlite/          # ClusterFuzzLite integrations
+├── .clusterfuzzlite/          # ClusterFuzzLite build configurations
 │   ├── build.sh               # Offline build compilation script
-│   └── project.yaml           # Lists active Jazzer targets
+│   └── project.yaml           # Target registration settings
 │
 ├── config/
 │   └── checkstyle/
-│       └── checkstyle.xml     # Code style layouts configuration
+│       └── checkstyle.xml     # Code style settings
 │
-├── fuzz/                      # Jazzer fuzz targets
-│   ├── corpus/                # Seed corpus directory
+├── fuzz/                      # Fuzz targets
+│   ├── corpus/                # Seed corpus directories
 │   │   ├── ArchiveDecoderFuzzer/
 │   │   ├── BinaryIndexFuzzer/
 │   │   ├── ConfigurationParserFuzzer/
 │   │   ├── ContainerParserFuzzer/
+│   │   ├── CssStyleParserFuzzer/
 │   │   ├── EventReplayFuzzer/
+│   │   ├── HtmlImporterFuzzer/
+│   │   ├── KeyRingParserFuzzer/
+│   │   ├── MarkdownImporterFuzzer/
 │   │   ├── MetadataParserFuzzer/
 │   │   ├── ObjectGraphFuzzer/
+│   │   ├── QueryParserFuzzer/
 │   │   └── StreamReaderFuzzer/
 │   │
 │   ├── ArchiveDecoderFuzzer.java
 │   ├── BinaryIndexFuzzer.java
 │   ├── ConfigurationParserFuzzer.java
 │   ├── ContainerParserFuzzer.java
+│   ├── CssStyleParserFuzzer.java
 │   ├── EventReplayFuzzer.java
+│   ├── HtmlImporterFuzzer.java
+│   ├── KeyRingParserFuzzer.java
+│   ├── MarkdownImporterFuzzer.java
 │   ├── MetadataParserFuzzer.java
 │   ├── ObjectGraphFuzzer.java
+│   ├── QueryParserFuzzer.java
 │   ├── StreamReaderFuzzer.java
 │   └── dictionary.txt         # Common fuzz dictionary tokens
 │
@@ -43,18 +53,18 @@ project/
 │   │       └── com/
 │   │           └── aura/
 │   │               ├── codec/
-│   │               │   ├── compression/    # LZ77, RLE decompressions
-│   │               │   └── encryption/     # XOR key permutations, AES wraps
+│   │               │   ├── compression/    # LZ77, RLE, word compression
+│   │               │   └── encryption/     # XOR key permutations, KeyDerivation, AES wraps
 │   │               │
-│   │               ├── config/             # XCF lexer, parser, validator
-│   │               ├── container/          # ADC container readers/writers
-│   │               ├── engine/             # FSM transitions, templates
-│   │               ├── internal/           # Low level CRC32, endian helpers
-│   │               ├── metadata/           # BSM metadata reader/writers
-│   │               ├── model/              # Document nodes AST, queries, math scripts
-│   │               ├── pipeline/           # HTML/Markdown renders, format mappings
+│   │               ├── config/             # XCF lexer, parser, writers, validators
+│   │               ├── container/          # ADC container readers/writers, IndexCache
+│   │               ├── engine/             # FSM transitions, event log writers/compactors, templates
+│   │               ├── internal/           # Low level CRC32, endian, array, math helpers
+│   │               ├── metadata/           # BSM metadata schemas, readers/writers
+│   │               ├── model/              # Document nodes AST, queries, evaluators
+│   │               ├── pipeline/           # HTML/Markdown renders, paginators, StageExecutors
 │   │               ├── stream/             # Bounded streams, bit-level buffers
-│   │               └── validation/         # Topological DFS check engine
+│   │               └── validation/         # Topological DFS checks, patch engine
 │   │
 │   └── test/
 │       └── java/
@@ -70,17 +80,16 @@ project/
 │                   ├── stream/
 │                   └── SeedGenerator.java   # Seed corpus compiler tool
 │
-├── build.gradle               # Gradle build script settings
-├── settings.gradle            # Project name setup
-├── gradlew                    # Unix shell bootstrap wrapper
-├── gradlew.bat                # Windows batch bootstrap wrapper
+├── build.gradle               # Gradle build settings
+├── settings.gradle            # Gradle project settings
+├── gradlew                    # Unix bootstrap wrapper script
+├── gradlew.bat                # Windows bootstrap wrapper script
 ├── README.md                  # Project overview manual
-├── ARCHITECTURE.md            # Packages and pipelines description
-├── FORMAT_SPEC.md             # Binary spec layout guides
-├── FUZZING.md                 # Fuzz instructions
-├── CONTRIBUTING.md            # Developing requirements
-├── SECURITY.md                # Sandbox bounds limits policy
-├── BUILD.md                   # Build and compile manual
-├── TESTING.md                 # Verification manual
-└── LICENSE                    # Licensing terms
+├── Architecture.md            # Architecture and package descriptions
+├── FORMAT_SPEC.md             # Format specifications guide
+├── CONTRIBUTING.md            # Guidelines for contributions
+├── SECURITY.md                # Security policy and inputs limits
+├── BUILD.md                   # Compilation and build instructions
+├── TESTING.md                 # Testing and coverage details
+└── LICENSE                    # Project license terms
 ```

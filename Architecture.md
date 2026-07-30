@@ -2,9 +2,9 @@
 
 This document outlines the package layout, data flow, and design patterns used in the Aura Document Processor (ADP).
 
-## Modular Package Layout
+## Package Layout
 
-ADP is structured into distinct, decoupled packages under the `com.aura` namespace:
+ADP is structured into packages under the `com.aura` namespace:
 
 ```mermaid
 graph TD
@@ -19,21 +19,21 @@ graph TD
 
 ### Core Packages & Responsibilities
 
-1.  **`com.aura.internal`**: Low-level helper utilities. Contains CRC32 checksum generators, argument assertions, and big/little-endian byte array conversions.
-2.  **`com.aura.stream`**: Sequential streaming support. Bit-level streams, bounded streams (for zip bomb security), seekable buffer abstractions, and checksum verification wrappers.
-3.  **`com.aura.codec`**: Compression and encryption codecs:
-    *   `compression`: Run-length encoding (PackBits style) and sliding window LZ77 compression.
-    *   `encryption`: Key permutations XOR cipher and JCE block cipher wraps.
-4.  **`com.aura.metadata`**: Tag-Length-Value (TLV) Binary Structured Metadata (BSM) reader and writer.
-5.  **`com.aura.config`**: Lexer and recursive descent parser for Xon Config Format (`.xcf`), as well as schema validators for range and regex checks.
-6.  **`com.aura.model`**: Document AST tree structures (paragraphs, images, tables, scripts). Includes an expression evaluator for math scripts and path queries.
-7.  **`com.aura.engine`**: Finite State Machines (FSM) containing transition guard conditions, event log replayers, and textual tag-based template formatting.
-8.  **`com.aura.validation`**: Graph check managers running cycles DFS tests, integrity checks, and schema layout compliance rules.
-9.  **`com.aura.pipeline`**: Process runners converting document nodes to HTML/Markdown and mapping Xon objects to layout nodes.
+1. **`com.aura.internal`**: Contains CRC32 checksum generators, argument assertions, string tokenizers, mathematical bounds clamping, and byte array conversion helpers.
+2. **`com.aura.stream`**: Contains bit-level streams, bounded streams (to restrict read limits), seekable buffers, and checksumming streams.
+3. **`com.aura.codec`**: Contains codecs for compression and encryption:
+    - `compression`: Run-length encoding (PackBits style), sliding window LZ77 compression, and word-level dictionary compression.
+    - `encryption`: XOR key permutations, key derivation functions, and JCE-based block cipher wrappers.
+4. **`com.aura.metadata`**: Decodes and encodes Binary Structured Metadata (BSM) tag-length-value formats.
+5. **`com.aura.config`**: Contains token lexers, recursive descent parsers, and validation schemas for Xon Config Format (`.xcf`).
+6. **`com.aura.model`**: Defines document node types (paragraphs, images, tables, scripts), query path evaluation, and template expression evaluation.
+7. **`com.aura.engine`**: Event stream log replayers, state transition engines, and document template engines.
+8. **`com.aura.validation`**: Graph checkers running topological sorting cycle checks and integrity rules.
+9. **`com.aura.pipeline`**: Layout paginators, CSS stylesheet mappers, format renderers (HTML and Markdown), and document node builders.
 
 ## Pipeline Data Flow
 
-The core integration path combines text parsing, state evaluation, binary container packing, and HTML/Markdown rendering in a unified loop:
+The processing pipeline connects configuration parsing, document tree generation, graph cycle checks, and rendering:
 
 ```
 [Raw Xon Config (.xcf)]
@@ -51,9 +51,9 @@ The core integration path combines text parsing, state evaluation, binary contai
    TextExtractor / HTML / Markdown Rendering
 ```
 
-## Security Boundaries & Sandboxing
+## Parsing Limits and Constraints
 
-A primary architectural driver is protection against malformed inputs:
-*   **Buffer Bounds Checks**: All byte conversions explicitly check bounds and throw custom exception classes.
-*   **Depth Constraints**: The XCF parser, template engine, and BSM decoder restrict maximum nesting recursion depth to prevent StackOverflow crashes.
-*   **Allocation Limits**: Decoders check uncompressed sizes prior to allocations to block memory exhaustions (Denial of Service).
+To prevent resource exhaustion during parsing operations, ADP enforces the following limits:
+- **Nesting Limits**: The Xon parser, template parser, and Bsm reader enforce recursion depth limits (64 and 16 respectively).
+- **Read Boundary Limits**: `BoundedInputStream` wraps decompression sources to limit read size.
+- **Decompression Checks**: Codecs check uncompressed sizes before byte array allocations.

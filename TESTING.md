@@ -1,8 +1,6 @@
 # Testing and Verification Manual
 
-This project features a high-density, multi-layered verification model, combining unit tests, integration tests, static code analysis, and continuous fuzzing.
-
----
+This document describes the unit testing setup, static analysis checks, and coverage reports configured for the project.
 
 ## 1. Unit & Integration Testing
 
@@ -13,38 +11,34 @@ We use **JUnit 5** to test every module. The test suite is organized into matchi
 ./gradlew test
 ```
 
-Tests verify:
-- Byte manipulation edge cases (endianness).
-- Stream boundary violations and EOF.
-- LZ77 compression offset and sliding window matches.
-- BSM TLV reader/writer symmetry and nesting boundaries.
+The tests verify:
+- Byte manipulation conversions and endianness.
+- Stream boundary parameters and EOF conditions.
+- LZ77 compression matching, RLE codecs, and word-level dictionary compressors.
+- BSM TLV reader/writer symmetry and schema validations.
 - Configuration syntax parsing and validation rules.
-- Document graph DFS topological cycle validation.
-- StateMachine events, context mutations, and text template parsing.
+- Document graph cycle checking and topological sorting.
+- FSM events, log compaction, context mutations, and template processing.
 
----
+## 2. Code Coverage (JaCoCo)
 
-## 2. Code Coverage Configuration (JaCoCo)
+JaCoCo is configured to generate coverage reports.
 
-ADP is configured with **JaCoCo** to track code coverage. Our target is to maintain coverage above **90%**.
-
-Each `./gradlew test` run automatically compiles JaCoCo reports under:
+After running the test suite, reports are compiled under:
 `build/reports/jacoco/test/html/index.html`
 
-Open this in your browser to inspect line-by-line coverage details.
-
----
+Open this file in a browser to view coverage metrics by package and class.
 
 ## 3. Static Code Analysis
 
-We run static analysis rules to enforce safety conventions before final builds:
+We use Checkstyle, PMD, and SpotBugs to verify coding conventions and detect bugs.
 
-### Run analysis
+### Run all analysis checks
 ```bash
 ./gradlew check
 ```
 
 This runs:
 - **Checkstyle**: Checks formatting limits (line wraps, brace placements). Configured in `config/checkstyle/checkstyle.xml`.
-- **PMD**: Looks for unused objects, high complexity, and error-prone code blocks.
-- **SpotBugs**: Runs byte-code checks to detect null pointer potentials and resource leaks.
+- **PMD**: Scans for unused variables, complexity, and other code style issues.
+- **SpotBugs**: Runs byte-code checks to identify null pointer potentials and resource leaks.

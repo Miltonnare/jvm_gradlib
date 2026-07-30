@@ -51,7 +51,7 @@ public class CodecTest {
     public void testXorEncryption() {
         byte[] key = {0x12, 0x34, 0x56, 0x78};
         XorEncryptionProvider provider = new XorEncryptionProvider(key);
-        byte[] plain = "SecureDataPayload".getBytes();
+        byte[] plain = "TestDataPayload".getBytes();
         byte[] cipher = provider.encrypt(plain);
         assertFalse(Arrays.equals(plain, cipher));
         byte[] dec = provider.decrypt(cipher);

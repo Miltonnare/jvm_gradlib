@@ -13,7 +13,7 @@ import java.util.LinkedHashMap;
 import java.util.Map;
 
 /**
- * Manages serialization and parsing of cryptographic keyrings in a secure binary format.
+ * Manages serialization and parsing of cryptographic keyrings in a binary format.
  */
 public class AuraKeyRing {
     private static final byte[] MAGIC = {(byte) 'K', (byte) 'Y', (byte) 'R', (byte) 'G'};

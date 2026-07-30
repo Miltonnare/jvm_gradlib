@@ -13,7 +13,7 @@ public class KeyRingTest {
         byte[] key1 = {1, 2, 3, 4};
         byte[] iv1 = {5, 6, 7, 8};
         keyring.addKey("default-xor", (byte) 1, key1, null);
-        keyring.addKey("secure-aes", (byte) 2, key1, iv1);
+        keyring.addKey("test-aes", (byte) 2, key1, iv1);
 
         byte[] serialized = keyring.serialize();
         assertNotNull(serialized);
@@ -27,7 +27,7 @@ public class KeyRingTest {
         assertArrayEquals(key1, entry1.getKey());
         assertNull(entry1.getIv());
 
-        var entry2 = parsed.getKey("secure-aes");
+        var entry2 = parsed.getKey("test-aes");
         assertEquals(2, entry2.getAlgorithm());
         assertArrayEquals(key1, entry2.getKey());
         assertArrayEquals(iv1, entry2.getIv());
