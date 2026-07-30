@@ -1,9 +1,9 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<testsuite name="com.aura.config.ConfigTest" tests="3" skipped="0" failures="0" errors="0" timestamp="2026-07-30T12:47:42" hostname="MILTONNARE-1" time="0.052">
+<testsuite name="com.aura.config.ConfigTest" tests="3" skipped="0" failures="0" errors="0" timestamp="2026-07-30T13:18:16" hostname="MILTONNARE-1" time="0.057">
   <properties/>
-  <testcase name="testLexer()" classname="com.aura.config.ConfigTest" time="0.011"/>
-  <testcase name="testSchemaValidator()" classname="com.aura.config.ConfigTest" time="0.038"/>
-  <testcase name="testParser()" classname="com.aura.config.ConfigTest" time="0.002"/>
+  <testcase name="testLexer()" classname="com.aura.config.ConfigTest" time="0.017"/>
+  <testcase name="testSchemaValidator()" classname="com.aura.config.ConfigTest" time="0.034"/>
+  <testcase name="testParser()" classname="com.aura.config.ConfigTest" time="0.001"/>
   <system-out><![CDATA[]]></system-out>
   <system-err><![CDATA[]]></system-err>
 </testsuite>

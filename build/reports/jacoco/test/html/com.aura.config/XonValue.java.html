@@ -8,35 +8,38 @@ import java.util.Map;
  */
 <span class="fc" id="L9">public abstract class XonValue {</span>
 
-<span class="nc" id="L11">    public boolean isObject() { return false; }</span>
-<span class="nc" id="L12">    public boolean isArray() { return false; }</span>
+<span class="fc" id="L11">    public boolean isObject() { return false; }</span>
+<span class="fc" id="L12">    public boolean isArray() { return false; }</span>
 <span class="nc" id="L13">    public boolean isPrimitive() { return false; }</span>
+<span class="nc" id="L14">    public boolean isNull() { return false; }</span>
+<span class="nc" id="L15">    public boolean isString() { return false; }</span>
+<span class="nc" id="L16">    public boolean isInt() { return false; }</span>
+<span class="nc" id="L17">    public boolean isDouble() { return false; }</span>
+<span class="nc" id="L18">    public boolean isBoolean() { return false; }</span>
 
     public Map&lt;String, XonValue&gt; asObject() {
-<span class="nc" id="L16">        throw new UnsupportedOperationException(&quot;Value is not a XonObject&quot;);</span>
+<span class="nc" id="L21">        throw new UnsupportedOperationException(&quot;Value is not a XonObject&quot;);</span>
     }
 
     public List&lt;XonValue&gt; asArray() {
-<span class="nc" id="L20">        throw new UnsupportedOperationException(&quot;Value is not a XonArray&quot;);</span>
+<span class="nc" id="L25">        throw new UnsupportedOperationException(&quot;Value is not a XonArray&quot;);</span>
     }
 
     public String asString() {
-<span class="nc" id="L24">        throw new UnsupportedOperationException(&quot;Value is not a string primitive&quot;);</span>
+<span class="nc" id="L29">        throw new UnsupportedOperationException(&quot;Value is not a string primitive&quot;);</span>
     }
 
     public double asDouble() {
-<span class="nc" id="L28">        throw new UnsupportedOperationException(&quot;Value is not a number primitive&quot;);</span>
+<span class="nc" id="L33">        throw new UnsupportedOperationException(&quot;Value is not a number primitive&quot;);</span>
     }
 
     public int asInt() {
-<span class="nc" id="L32">        throw new UnsupportedOperationException(&quot;Value is not a number primitive&quot;);</span>
+<span class="nc" id="L37">        throw new UnsupportedOperationException(&quot;Value is not a number primitive&quot;);</span>
     }
 
     public boolean asBoolean() {
-<span class="nc" id="L36">        throw new UnsupportedOperationException(&quot;Value is not a boolean primitive&quot;);</span>
+<span class="nc" id="L41">        throw new UnsupportedOperationException(&quot;Value is not a boolean primitive&quot;);</span>
     }
-
-<span class="nc" id="L39">    public boolean isNull() { return false; }</span>
 
     @Override
     public abstract String toString();

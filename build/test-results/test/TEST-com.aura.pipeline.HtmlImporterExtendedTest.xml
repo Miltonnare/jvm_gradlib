@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<testsuite name="com.aura.pipeline.HtmlImporterExtendedTest" tests="1" skipped="0" failures="0" errors="0" timestamp="2026-07-30T12:47:42" hostname="MILTONNARE-1" time="0.006">
+<testsuite name="com.aura.pipeline.HtmlImporterExtendedTest" tests="1" skipped="0" failures="0" errors="0" timestamp="2026-07-30T13:18:16" hostname="MILTONNARE-1" time="0.022">
   <properties/>
-  <testcase name="testHtmlImporterEmptyInput()" classname="com.aura.pipeline.HtmlImporterExtendedTest" time="0.006"/>
+  <testcase name="testHtmlImporterEmptyInput()" classname="com.aura.pipeline.HtmlImporterExtendedTest" time="0.022"/>
   <system-out><![CDATA[]]></system-out>
   <system-err><![CDATA[]]></system-err>
 </testsuite>

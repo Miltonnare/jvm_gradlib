@@ -11,6 +11,11 @@ public abstract class XonValue {
     public boolean isObject() { return false; }
     public boolean isArray() { return false; }
     public boolean isPrimitive() { return false; }
+    public boolean isNull() { return false; }
+    public boolean isString() { return false; }
+    public boolean isInt() { return false; }
+    public boolean isDouble() { return false; }
+    public boolean isBoolean() { return false; }
 
     public Map<String, XonValue> asObject() {
         throw new UnsupportedOperationException("Value is not a XonObject");
@@ -35,8 +40,6 @@ public abstract class XonValue {
     public boolean asBoolean() {
         throw new UnsupportedOperationException("Value is not a boolean primitive");
     }
-
-    public boolean isNull() { return false; }
 
     @Override
     public abstract String toString();

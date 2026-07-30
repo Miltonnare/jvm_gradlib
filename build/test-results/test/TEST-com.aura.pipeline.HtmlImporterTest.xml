@@ -1,9 +1,9 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<testsuite name="com.aura.pipeline.HtmlImporterTest" tests="3" skipped="0" failures="0" errors="0" timestamp="2026-07-30T12:47:42" hostname="MILTONNARE-1" time="0.069">
+<testsuite name="com.aura.pipeline.HtmlImporterTest" tests="3" skipped="0" failures="0" errors="0" timestamp="2026-07-30T13:18:16" hostname="MILTONNARE-1" time="0.04">
   <properties/>
-  <testcase name="testImportTableHtml()" classname="com.aura.pipeline.HtmlImporterTest" time="0.012"/>
-  <testcase name="testImportBasicHtml()" classname="com.aura.pipeline.HtmlImporterTest" time="0.052"/>
-  <testcase name="testNestingDepthAndMismatchErrors()" classname="com.aura.pipeline.HtmlImporterTest" time="0.003"/>
+  <testcase name="testImportTableHtml()" classname="com.aura.pipeline.HtmlImporterTest" time="0.028"/>
+  <testcase name="testImportBasicHtml()" classname="com.aura.pipeline.HtmlImporterTest" time="0.006"/>
+  <testcase name="testNestingDepthAndMismatchErrors()" classname="com.aura.pipeline.HtmlImporterTest" time="0.004"/>
   <system-out><![CDATA[]]></system-out>
   <system-err><![CDATA[]]></system-err>
 </testsuite>

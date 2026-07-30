@@ -25,6 +25,18 @@ public class XonPrimitive extends XonValue {
     public boolean isNull() { return val == null; }
 
     @Override
+    public boolean isString() { return val instanceof String; }
+
+    @Override
+    public boolean isInt() { return val instanceof Integer || val instanceof Long || val instanceof Short || val instanceof Byte; }
+
+    @Override
+    public boolean isDouble() { return val instanceof Double || val instanceof Float; }
+
+    @Override
+    public boolean isBoolean() { return val instanceof Boolean; }
+
+    @Override
     public String asString() {
         return val == null ? "null" : val.toString();
     }

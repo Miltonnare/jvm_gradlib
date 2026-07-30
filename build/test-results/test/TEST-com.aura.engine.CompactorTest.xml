@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<testsuite name="com.aura.engine.CompactorTest" tests="1" skipped="0" failures="0" errors="0" timestamp="2026-07-30T12:47:42" hostname="MILTONNARE-1" time="0.008">
+<testsuite name="com.aura.engine.CompactorTest" tests="1" skipped="0" failures="0" errors="0" timestamp="2026-07-30T13:18:16" hostname="MILTONNARE-1" time="0.007">
   <properties/>
-  <testcase name="testEventCompaction()" classname="com.aura.engine.CompactorTest" time="0.008"/>
+  <testcase name="testEventCompaction()" classname="com.aura.engine.CompactorTest" time="0.007"/>
   <system-out><![CDATA[]]></system-out>
   <system-err><![CDATA[]]></system-err>
 </testsuite>

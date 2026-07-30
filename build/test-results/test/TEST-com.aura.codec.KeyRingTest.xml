@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<testsuite name="com.aura.codec.KeyRingTest" tests="2" skipped="0" failures="0" errors="0" timestamp="2026-07-30T12:47:42" hostname="MILTONNARE-1" time="0.018">
+<testsuite name="com.aura.codec.KeyRingTest" tests="2" skipped="0" failures="0" errors="0" timestamp="2026-07-30T13:18:16" hostname="MILTONNARE-1" time="0.017">
   <properties/>
-  <testcase name="testKeyRingValidationErrors()" classname="com.aura.codec.KeyRingTest" time="0.007"/>
+  <testcase name="testKeyRingValidationErrors()" classname="com.aura.codec.KeyRingTest" time="0.006"/>
   <testcase name="testKeyRingSerializeAndParse()" classname="com.aura.codec.KeyRingTest" time="0.01"/>
   <system-out><![CDATA[]]></system-out>
   <system-err><![CDATA[]]></system-err>

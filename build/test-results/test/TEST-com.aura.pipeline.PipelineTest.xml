@@ -1,11 +1,11 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<testsuite name="com.aura.pipeline.PipelineTest" tests="5" skipped="0" failures="0" errors="0" timestamp="2026-07-30T12:47:42" hostname="MILTONNARE-1" time="0.194">
+<testsuite name="com.aura.pipeline.PipelineTest" tests="5" skipped="0" failures="0" errors="0" timestamp="2026-07-30T13:18:17" hostname="MILTONNARE-1" time="0.062">
   <properties/>
-  <testcase name="testTransformationPipeline()" classname="com.aura.pipeline.PipelineTest" time="0.04"/>
-  <testcase name="testFormatConverter()" classname="com.aura.pipeline.PipelineTest" time="0.008"/>
-  <testcase name="testDocumentRenderers()" classname="com.aura.pipeline.PipelineTest" time="0.015"/>
-  <testcase name="testContainerIntegration()" classname="com.aura.pipeline.PipelineTest" time="0.111"/>
-  <testcase name="testValidationEngine()" classname="com.aura.pipeline.PipelineTest" time="0.008"/>
+  <testcase name="testTransformationPipeline()" classname="com.aura.pipeline.PipelineTest" time="0.008"/>
+  <testcase name="testFormatConverter()" classname="com.aura.pipeline.PipelineTest" time="0.007"/>
+  <testcase name="testDocumentRenderers()" classname="com.aura.pipeline.PipelineTest" time="0.007"/>
+  <testcase name="testContainerIntegration()" classname="com.aura.pipeline.PipelineTest" time="0.026"/>
+  <testcase name="testValidationEngine()" classname="com.aura.pipeline.PipelineTest" time="0.011"/>
   <system-out><![CDATA[]]></system-out>
   <system-err><![CDATA[]]></system-err>
 </testsuite>
