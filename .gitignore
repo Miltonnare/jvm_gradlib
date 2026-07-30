@@ -1,0 +1,21 @@
+# Gradle build and cache directories
+.gradle/
+build/
+
+# IDE files
+.idea/
+*.iml
+*.ipr
+*.iws
+.settings/
+.classpath
+.project
+
+# Compilation temp list files
+sources_main.txt
+sources_fuzz.txt
+sources.txt
+
+# OS metadata files
+.DS_Store
+Thumbs.db
