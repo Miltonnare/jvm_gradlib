@@ -12,13 +12,13 @@ import java.util.List;
 import java.util.Map;
 
 /**
- * Decodes Binary Structured Metadata (BSM) from streams with strict security limits.
+ * Decodes Binary Structured Metadata (BSM) from streams with nesting limits.
  */
 public final class BinaryMetadataReader {
     private static final int MAX_DEPTH = 16;
     private static final int MAX_KEY_SIZE = 1024;
     private static final int MAX_STRING_SIZE = 65536;
-    private static final int MAX_BINARY_SIZE = 1048576; // 1MB limit for safety
+    private static final int MAX_BINARY_SIZE = 1048576; // 1MB limit
     private static final int MAX_ARRAY_COUNT = 4096;
 
     private BinaryMetadataReader() {
@@ -53,7 +53,7 @@ public final class BinaryMetadataReader {
             }
             int keyLen = ByteUtils.readShortBe(keyLenBuf, 0) & 0xFFFF;
             if (keyLen > MAX_KEY_SIZE) {
-                throw new IllegalArgumentException("Metadata key size exceeds safety limit of " + MAX_KEY_SIZE);
+                throw new IllegalArgumentException("Metadata key size exceeds limit of " + MAX_KEY_SIZE);
             }
 
             // Read Key bytes
@@ -134,11 +134,11 @@ public final class BinaryMetadataReader {
                 }
                 int count = ByteUtils.readIntBe(data, 0);
                 if (count < 0 || count > MAX_ARRAY_COUNT) {
-                    throw new IllegalArgumentException("Array count exceeds safety limit: " + count);
+                    throw new IllegalArgumentException("Array count exceeds limit: " + count);
                 }
 
                 ByteArrayInputStream bais = new ByteArrayInputStream(data, 4, data.length - 4);
-                List<MetadataValue> list = new ArrayList<>(Math.min(count, 128)); // Prevent excessive pre-allocation
+                List<MetadataValue> list = new ArrayList<>(Math.min(count, 128)); // Cap initial capacity
                 for (int i = 0; i < count; i++) {
                     int elTag = bais.read();
                     if (elTag == -1) {

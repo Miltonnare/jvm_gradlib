@@ -30,7 +30,7 @@ public final class CompressionProvider {
     }
 
     /**
-     * Decompress data using the specified algorithm and safety bound.
+     * Decompress data using the specified algorithm and limit bound.
      */
     public static byte[] decompress(byte[] compressed, CompressionAlgorithm algorithm, int maxUncompressedSize) {
         if (compressed == null) {

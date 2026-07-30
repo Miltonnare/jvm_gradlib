@@ -169,7 +169,7 @@ public class HtmlImporter implements TransformationPipeline.Stage<String, Docume
 
         for (Token t : tokens) {
             if (stack.size() > MAX_NESTING) {
-                throw new IllegalStateException("HTML nesting exceeds maximum safety depth");
+                throw new IllegalStateException("HTML nesting exceeds maximum nesting depth");
             }
 
             switch (t.type) {

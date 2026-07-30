@@ -70,7 +70,7 @@ public class EventReplayEngine {
             }
             int mutationCount = ByteUtils.readShortBe(mutationsCountBuf, 0) & 0xFFFF;
             if (mutationCount > MAX_MUTATIONS) {
-                throw new IllegalArgumentException("Mutation count exceeds safety limit: " + mutationCount);
+                throw new IllegalArgumentException("Mutation count exceeds allowed limit: " + mutationCount);
             }
 
             // Apply mutations

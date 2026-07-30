@@ -10,7 +10,7 @@ import java.util.Set;
 
 /**
  * Compiles a schema description from Xon configuration format
- * and performs strict validation checks on configuration values.
+ * and performs validation checks on configuration values.
  */
 public class XonSchemaCompiler {
 

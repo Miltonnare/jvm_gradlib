@@ -25,7 +25,7 @@ public class CodecTest {
         byte[] literalComp = RleCompression.compress(literalInput);
         assertArrayEquals(literalInput, RleCompression.decompress(literalComp, 100));
 
-        // Test OOM safety limit
+        // Test bound limits
         assertThrows(IllegalStateException.class, () -> RleCompression.decompress(compressed, 5));
     }
 

@@ -85,7 +85,7 @@ public final class RleCompression {
                 i++;
 
                 if (out.size() + runLen > maxUncompressedSize) {
-                    throw new IllegalStateException("Decompressed size exceeds safety limit: " + maxUncompressedSize);
+                    throw new IllegalStateException("Decompressed size exceeds allowed limit: " + maxUncompressedSize);
                 }
 
                 for (int j = 0; j < runLen; j++) {
@@ -99,7 +99,7 @@ public final class RleCompression {
                 }
 
                 if (out.size() + literalLen > maxUncompressedSize) {
-                    throw new IllegalStateException("Decompressed size exceeds safety limit: " + maxUncompressedSize);
+                    throw new IllegalStateException("Decompressed size exceeds allowed limit: " + maxUncompressedSize);
                 }
 
                 out.write(compressed, i, literalLen);

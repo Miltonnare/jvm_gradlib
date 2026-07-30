@@ -107,7 +107,7 @@ public class XonParser {
                     break;
                 }
             } else if (peek().getType() != XonToken.Type.RBRACE && peek().getType() != XonToken.Type.EOF) {
-                // Commas are technically optional, but need safety checking
+                // Commas are technically optional, but need bounds checking
                 // If it's not a comma or brace, it must be the start of a new field key
                 if (peek().getType() != XonToken.Type.STRING && peek().getType() != XonToken.Type.IDENTIFIER) {
                     throw new IllegalArgumentException(

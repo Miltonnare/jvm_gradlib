@@ -162,7 +162,7 @@ public class AuraKeyRing {
             byte[] keyLenBuf = new byte[2];
             if (readFully(bais, keyLenBuf) < 2) throw new IllegalArgumentException("Truncated KeyRing key size");
             int keyLen = ByteUtils.readShortBe(keyLenBuf, 0) & 0xFFFF;
-            if (keyLen > MAX_KEY_SIZE) throw new IllegalArgumentException("Key size exceeds safety limit");
+            if (keyLen > MAX_KEY_SIZE) throw new IllegalArgumentException("Key size exceeds limit");
 
             byte[] keyBytes = new byte[keyLen];
             if (readFully(bais, keyBytes) < keyLen) throw new IllegalArgumentException("Truncated KeyRing key bytes");
@@ -170,7 +170,7 @@ public class AuraKeyRing {
             byte[] ivLenBuf = new byte[2];
             if (readFully(bais, ivLenBuf) < 2) throw new IllegalArgumentException("Truncated KeyRing IV size");
             int ivLen = ByteUtils.readShortBe(ivLenBuf, 0) & 0xFFFF;
-            if (ivLen > MAX_KEY_SIZE) throw new IllegalArgumentException("IV size exceeds safety limit");
+            if (ivLen > MAX_KEY_SIZE) throw new IllegalArgumentException("IV size exceeds limit");
 
             byte[] ivBytes = null;
             if (ivLen > 0) {

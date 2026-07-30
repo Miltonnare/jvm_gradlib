@@ -27,7 +27,7 @@ public class ContainerIndex {
 
         int count = ByteUtils.readIntBe(data, 0);
         if (count < 0 || count > MAX_INDEX_ENTRIES) {
-            throw new ContainerException("Invalid index entries count or exceeds safety limit: " + count);
+            throw new ContainerException("Invalid index entries count or exceeds allowed limit: " + count);
         }
 
         List<ContainerIndexEntry> parsed = new ArrayList<>(count);

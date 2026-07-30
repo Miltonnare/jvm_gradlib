@@ -15,7 +15,7 @@ import java.util.Map;
  * Reader for the Aura Document Container format (.adc).
  */
 public class AuraContainerReader {
-    private static final int MAX_UNCOMPRESSED_PAYLOAD = 16 * 1024 * 1024; // 16MB limit per entry to prevent OOM
+    private static final int MAX_UNCOMPRESSED_PAYLOAD = 16 * 1024 * 1024; // 16MB limit per entry limit
     private final byte[] fileData;
     private ContainerHeader header;
     private ContainerIndex index;
@@ -123,8 +123,8 @@ public class AuraContainerReader {
         byte compCode = entry.getCompressionType();
         CompressionAlgorithm algo = CompressionAlgorithm.fromCode(compCode);
         if (algo != CompressionAlgorithm.NONE) {
-            int safetyLimit = (int) Math.min(MAX_UNCOMPRESSED_PAYLOAD, uncompressedLen * 2 + 1024);
-            processedData = CompressionProvider.decompress(processedData, algo, safetyLimit);
+            int decompressionLimit = (int) Math.min(MAX_UNCOMPRESSED_PAYLOAD, uncompressedLen * 2 + 1024);
+            processedData = CompressionProvider.decompress(processedData, algo, decompressionLimit);
         }
 
         // 4. Verify uncompressed length matches expected
