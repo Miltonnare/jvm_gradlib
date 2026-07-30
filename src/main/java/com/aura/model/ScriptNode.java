@@ -75,7 +75,7 @@ public class ScriptNode extends DocumentNode {
                 list.add(sb.toString());
                 continue;
             }
-            // Ignore other symbols or throw error
+            // Process other characters
             list.add(String.valueOf(c));
             i++;
         }

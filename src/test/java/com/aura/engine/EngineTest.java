@@ -18,7 +18,7 @@ public class EngineTest {
         StateMachine fsm = new StateMachine("DRAFT");
         fsm.addTransition("DRAFT", new StateMachine.Transition("review", "IN_REVIEW", null, null));
         fsm.addTransition("IN_REVIEW", new StateMachine.Transition("approve", "APPROVED", "score", "90"));
-        fsm.addTransition("IN_REVIEW", new StateMachine.Transition("reject", "DRAFT", null, null));
+        fsm.addTransition("IN_REVIEW", new StateMachine.Transition("decline", "DRAFT", null, null));
 
         assertTrue(fsm.triggerEvent("review"));
         assertEquals("IN_REVIEW", fsm.getCurrentState());

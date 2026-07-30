@@ -71,8 +71,8 @@ public class CssStyleParser {
                         node.setAttribute(decl.getKey(), decl.getValue());
                     }
                 }
-            } catch (Exception ignored) {
-                // Ignore matching errors for complex CSS rules not fully supported by AuraQuery
+            } catch (Exception e) {
+                // Catch matching exceptions
             }
         }
     }

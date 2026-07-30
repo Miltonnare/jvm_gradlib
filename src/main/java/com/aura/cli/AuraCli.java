@@ -172,7 +172,7 @@ public class AuraCli {
     private static void write(ByteArrayOutputStream stream, String text) {
         try {
             stream.write(text.getBytes(StandardCharsets.UTF_8));
-        } catch (IOException ignored) {}
+        } catch (IOException e) {}
     }
 
     private static byte[] readFile(String path) throws IOException {

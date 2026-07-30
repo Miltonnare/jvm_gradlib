@@ -1,9 +1,4 @@
-# Aura Document Processor Fuzzing Dictionary
-
-# Magic Signature
 "AURA"
-
-# XCF syntax structures and punctuation
 "{"
 "}"
 "["
@@ -12,8 +7,6 @@
 ","
 "#"
 "//"
-
-# XCF schema keywords
 "true"
 "false"
 "null"
@@ -28,8 +21,6 @@
 "items"
 "minItems"
 "maxItems"
-
-# Document AST node names and fields
 "document"
 "paragraph"
 "image"
@@ -48,16 +39,12 @@
 "attributes"
 "children"
 "ref"
-
-# Math script tokens
 "+"
 "-"
 "*"
 "/"
 "("
 ")"
-
-# TLV metadata type tag indicators (Hex)
 "\x01"
 "\x02"
 "\x03"
