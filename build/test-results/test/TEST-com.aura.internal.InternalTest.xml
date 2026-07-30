@@ -1,9 +1,0 @@
-<?xml version="1.0" encoding="UTF-8"?>
-<testsuite name="com.aura.internal.InternalTest" tests="3" skipped="0" failures="0" errors="0" timestamp="2026-07-30T13:18:16" hostname="MILTONNARE-1" time="0.011">
-  <properties/>
-  <testcase name="testByteUtils()" classname="com.aura.internal.InternalTest" time="0.001"/>
-  <testcase name="testCrc32()" classname="com.aura.internal.InternalTest" time="0.001"/>
-  <testcase name="testPreconditions()" classname="com.aura.internal.InternalTest" time="0.005"/>
-  <system-out><![CDATA[]]></system-out>
-  <system-err><![CDATA[]]></system-err>
-</testsuite>

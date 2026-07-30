@@ -1,9 +1,0 @@
-<?xml version="1.0" encoding="UTF-8"?>
-<testsuite name="com.aura.engine.EngineTest" tests="3" skipped="0" failures="0" errors="0" timestamp="2026-07-30T13:18:16" hostname="MILTONNARE-1" time="0.02">
-  <properties/>
-  <testcase name="testTemplateEngine()" classname="com.aura.engine.EngineTest" time="0.006"/>
-  <testcase name="testEventReplayEngine()" classname="com.aura.engine.EngineTest" time="0.011"/>
-  <testcase name="testStateMachine()" classname="com.aura.engine.EngineTest" time="0.001"/>
-  <system-out><![CDATA[]]></system-out>
-  <system-err><![CDATA[]]></system-err>
-</testsuite>
