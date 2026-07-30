@@ -4,16 +4,33 @@
 
 # 1. Locate Jazzer API jar
 JAZZER_API=""
-for path in \
-    /usr/local/share/jazzer/jazzer_api_deploy.jar \
-    /usr/lib/jazzer/jazzer_api_deploy.jar \
-    /usr/lib/jazzer/jazzer_api.jar \
-    /usr/local/share/jazzer/jazzer_api.jar; do
-  if [ -f "$path" ]; then
-    JAZZER_API="$path"
-    break
+
+if [ -n "${JAZZER_API_PATH:-}" ] && [ -f "$JAZZER_API_PATH" ]; then
+  JAZZER_API="$JAZZER_API_PATH"
+fi
+
+if [ -z "$JAZZER_API" ]; then
+  # Try search standard directories
+  found_jar=$(find /usr /usr/local /lib /lib64 /opt -name "*jazzer_api*.jar" 2>/dev/null | head -n 1)
+  if [ -n "$found_jar" ] && [ -f "$found_jar" ]; then
+    JAZZER_API="$found_jar"
   fi
-done
+fi
+
+if [ -z "$JAZZER_API" ]; then
+  # Fallback to hardcoded list
+  for path in \
+      /usr/local/lib/jazzer_api_deploy.jar \
+      /usr/local/share/jazzer/jazzer_api_deploy.jar \
+      /usr/lib/jazzer/jazzer_api_deploy.jar \
+      /usr/lib/jazzer/jazzer_api.jar \
+      /usr/local/share/jazzer/jazzer_api.jar; do
+    if [ -f "$path" ]; then
+      JAZZER_API="$path"
+      break
+    fi
+  done
+fi
 
 if [ -z "$JAZZER_API" ]; then
   echo "Error: jazzer_api.jar not found in standard installation directories."
