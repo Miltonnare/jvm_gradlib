@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testsuite name="com.aura.pipeline.StatsAndPdfTest" tests="2" skipped="0" failures="0" errors="0" timestamp="2026-07-30T12:47:43" hostname="MILTONNARE-1" time="0.009">
+  <properties/>
+  <testcase name="testPdfMockRenderer()" classname="com.aura.pipeline.StatsAndPdfTest" time="0.005"/>
+  <testcase name="testDocumentStatistics()" classname="com.aura.pipeline.StatsAndPdfTest" time="0.003"/>
+  <system-out><![CDATA[]]></system-out>
+  <system-err><![CDATA[]]></system-err>
+</testsuite>

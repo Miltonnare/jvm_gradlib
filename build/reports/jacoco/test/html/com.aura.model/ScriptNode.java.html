@@ -1,0 +1,187 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>ScriptNode.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">aura-document-processor</a> &gt; <a href="index.source.html" class="el_package">com.aura.model</a> &gt; <span class="el_source">ScriptNode.java</span></div><h1>ScriptNode.java</h1><pre class="source lang-java linenums">package com.aura.model;
+
+import com.aura.internal.Preconditions;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Map;
+
+/**
+ * Node representing an executable expression script within the document structure.
+ */
+public class ScriptNode extends DocumentNode {
+    private final String expression;
+
+    public ScriptNode(String id, String expression) {
+<span class="fc" id="L15">        super(id);</span>
+<span class="fc" id="L16">        this.expression = Preconditions.checkNotNull(expression, &quot;Expression cannot be null&quot;);</span>
+<span class="fc" id="L17">    }</span>
+
+    public String getExpression() {
+<span class="fc" id="L20">        return expression;</span>
+    }
+
+    @Override
+    public String getNodeType() {
+<span class="nc" id="L25">        return &quot;script&quot;;</span>
+    }
+
+    @Override
+    public void accept(DocumentVisitor visitor) {
+<span class="nc" id="L30">        visitor.visit(this);</span>
+<span class="nc" id="L31">    }</span>
+
+    /**
+     * Simple recursive expression evaluator.
+     * Supports basic arithmetic (+, -, *, /) and variable substitution.
+     */
+    public double evaluate(Map&lt;String, Double&gt; context) {
+<span class="fc" id="L38">        List&lt;String&gt; tokens = tokenize(expression);</span>
+<span class="pc bpc" id="L39" title="1 of 2 branches missed.">        if (tokens.isEmpty()) {</span>
+<span class="nc" id="L40">            return 0.0;</span>
+        }
+<span class="fc" id="L42">        return new Evaluator(tokens, context).parseAndEval();</span>
+    }
+
+    private List&lt;String&gt; tokenize(String expr) {
+<span class="fc" id="L46">        List&lt;String&gt; list = new ArrayList&lt;&gt;();</span>
+<span class="fc" id="L47">        int i = 0;</span>
+<span class="fc" id="L48">        int len = expr.length();</span>
+<span class="fc bfc" id="L49" title="All 2 branches covered.">        while (i &lt; len) {</span>
+<span class="fc" id="L50">            char c = expr.charAt(i);</span>
+<span class="fc bfc" id="L51" title="All 2 branches covered.">            if (Character.isWhitespace(c)) {</span>
+<span class="fc" id="L52">                i++;</span>
+<span class="fc" id="L53">                continue;</span>
+            }
+<span class="pc bpc" id="L55" title="1 of 12 branches missed.">            if (c == '+' || c == '-' || c == '*' || c == '/' || c == '(' || c == ')') {</span>
+<span class="fc" id="L56">                list.add(String.valueOf(c));</span>
+<span class="fc" id="L57">                i++;</span>
+<span class="fc" id="L58">                continue;</span>
+            }
+<span class="pc bpc" id="L60" title="1 of 4 branches missed.">            if (Character.isDigit(c) || c == '.') {</span>
+<span class="fc" id="L61">                StringBuilder sb = new StringBuilder();</span>
+<span class="pc bpc" id="L62" title="1 of 6 branches missed.">                while (i &lt; len &amp;&amp; (Character.isDigit(expr.charAt(i)) || expr.charAt(i) == '.')) {</span>
+<span class="fc" id="L63">                    sb.append(expr.charAt(i));</span>
+<span class="fc" id="L64">                    i++;</span>
+                }
+<span class="fc" id="L66">                list.add(sb.toString());</span>
+<span class="fc" id="L67">                continue;</span>
+            }
+<span class="pc bpc" id="L69" title="3 of 4 branches missed.">            if (Character.isLetter(c) || c == '_') {</span>
+<span class="fc" id="L70">                StringBuilder sb = new StringBuilder();</span>
+<span class="pc bpc" id="L71" title="1 of 6 branches missed.">                while (i &lt; len &amp;&amp; (Character.isLetterOrDigit(expr.charAt(i)) || expr.charAt(i) == '_')) {</span>
+<span class="fc" id="L72">                    sb.append(expr.charAt(i));</span>
+<span class="fc" id="L73">                    i++;</span>
+                }
+<span class="fc" id="L75">                list.add(sb.toString());</span>
+<span class="fc" id="L76">                continue;</span>
+            }
+            // Ignore other symbols or throw error
+<span class="nc" id="L79">            list.add(String.valueOf(c));</span>
+<span class="nc" id="L80">            i++;</span>
+<span class="nc" id="L81">        }</span>
+<span class="fc" id="L82">        return list;</span>
+    }
+
+    private static class Evaluator {
+        private final List&lt;String&gt; tokens;
+        private final Map&lt;String, Double&gt; context;
+<span class="fc" id="L88">        private int idx = 0;</span>
+
+<span class="fc" id="L90">        Evaluator(List&lt;String&gt; tokens, Map&lt;String, Double&gt; context) {</span>
+<span class="fc" id="L91">            this.tokens = tokens;</span>
+<span class="fc" id="L92">            this.context = context;</span>
+<span class="fc" id="L93">        }</span>
+
+        double parseAndEval() {
+<span class="fc" id="L96">            double result = parseTerm();</span>
+            while (true) {
+<span class="fc" id="L98">                String next = peek();</span>
+<span class="fc bfc" id="L99" title="All 2 branches covered.">                if (&quot;+&quot;.equals(next)) {</span>
+<span class="fc" id="L100">                    consume();</span>
+<span class="fc" id="L101">                    result += parseTerm();</span>
+<span class="pc bpc" id="L102" title="1 of 2 branches missed.">                } else if (&quot;-&quot;.equals(next)) {</span>
+<span class="nc" id="L103">                    consume();</span>
+<span class="nc" id="L104">                    result -= parseTerm();</span>
+                } else {
+                    break;
+                }
+<span class="fc" id="L108">            }</span>
+<span class="fc" id="L109">            return result;</span>
+        }
+
+        private double parseTerm() {
+<span class="fc" id="L113">            double result = parseFactor();</span>
+            while (true) {
+<span class="fc" id="L115">                String next = peek();</span>
+<span class="fc bfc" id="L116" title="All 2 branches covered.">                if (&quot;*&quot;.equals(next)) {</span>
+<span class="fc" id="L117">                    consume();</span>
+<span class="fc" id="L118">                    result *= parseFactor();</span>
+<span class="fc bfc" id="L119" title="All 2 branches covered.">                } else if (&quot;/&quot;.equals(next)) {</span>
+<span class="fc" id="L120">                    consume();</span>
+<span class="fc" id="L121">                    double divisor = parseFactor();</span>
+<span class="fc bfc" id="L122" title="All 2 branches covered.">                    if (divisor == 0.0) {</span>
+<span class="fc" id="L123">                        throw new ArithmeticException(&quot;Division by zero in expression evaluation&quot;);</span>
+                    }
+<span class="fc" id="L125">                    result /= divisor;</span>
+                } else {
+                    break;
+                }
+<span class="fc" id="L129">            }</span>
+<span class="fc" id="L130">            return result;</span>
+        }
+
+        private double parseFactor() {
+<span class="fc" id="L134">            String next = peek();</span>
+<span class="fc bfc" id="L135" title="All 2 branches covered.">            if (&quot;(&quot;.equals(next)) {</span>
+<span class="fc" id="L136">                consume(); // '('</span>
+<span class="fc" id="L137">                double result = parseAndEval();</span>
+<span class="fc" id="L138">                consume(&quot;)&quot;); // ')'</span>
+<span class="fc" id="L139">                return result;</span>
+            }
+<span class="pc bpc" id="L141" title="1 of 2 branches missed.">            if (&quot;-&quot;.equals(next)) {</span>
+<span class="nc" id="L142">                consume();</span>
+<span class="nc" id="L143">                return -parseFactor();</span>
+            }
+<span class="pc bpc" id="L145" title="1 of 2 branches missed.">            if (&quot;+&quot;.equals(next)) {</span>
+<span class="nc" id="L146">                consume();</span>
+<span class="nc" id="L147">                return parseFactor();</span>
+            }
+
+<span class="fc" id="L150">            consume();</span>
+<span class="pc bpc" id="L151" title="1 of 2 branches missed.">            if (next == null) {</span>
+<span class="nc" id="L152">                throw new IllegalArgumentException(&quot;Unexpected end of expression&quot;);</span>
+            }
+
+            // Check if it's a number
+            try {
+<span class="fc" id="L157">                return Double.parseDouble(next);</span>
+<span class="fc" id="L158">            } catch (NumberFormatException e) {</span>
+                // Treat as variable
+<span class="pc bpc" id="L160" title="2 of 4 branches missed.">                if (context != null &amp;&amp; context.containsKey(next)) {</span>
+<span class="fc" id="L161">                    return context.get(next);</span>
+                }
+<span class="nc" id="L163">                throw new IllegalArgumentException(&quot;Undefined variable or invalid number: &quot; + next);</span>
+            }
+        }
+
+        private String peek() {
+<span class="fc bfc" id="L168" title="All 2 branches covered.">            if (idx &gt;= tokens.size()) return null;</span>
+<span class="fc" id="L169">            return tokens.get(idx);</span>
+        }
+
+        private void consume() {
+<span class="pc bpc" id="L173" title="1 of 2 branches missed.">            if (idx &lt; tokens.size()) {</span>
+<span class="fc" id="L174">                idx++;</span>
+            }
+<span class="fc" id="L176">        }</span>
+
+        private void consume(String expected) {
+<span class="fc" id="L179">            String val = peek();</span>
+<span class="pc bpc" id="L180" title="1 of 2 branches missed.">            if (!expected.equals(val)) {</span>
+<span class="nc" id="L181">                throw new IllegalArgumentException(String.format(&quot;Expected token '%s' but got '%s' at token position %d&quot;, expected, val, idx));</span>
+            }
+<span class="fc" id="L183">            consume();</span>
+<span class="fc" id="L184">        }</span>
+    }
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.11.202310140853</span></div></body></html>

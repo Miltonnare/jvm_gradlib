@@ -1,0 +1,143 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>AuraContainerReader.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">aura-document-processor</a> &gt; <a href="index.source.html" class="el_package">com.aura.container</a> &gt; <span class="el_source">AuraContainerReader.java</span></div><h1>AuraContainerReader.java</h1><pre class="source lang-java linenums">package com.aura.container;
+
+import com.aura.codec.compression.CompressionAlgorithm;
+import com.aura.codec.compression.CompressionProvider;
+import com.aura.codec.encryption.EncryptionProvider;
+import com.aura.internal.Crc32;
+import com.aura.internal.Preconditions;
+import com.aura.metadata.BinaryMetadataReader;
+import com.aura.metadata.MetadataValue;
+import java.io.IOException;
+import java.util.Arrays;
+import java.util.Map;
+
+/**
+ * Reader for the Aura Document Container format (.adc).
+ */
+public class AuraContainerReader {
+    private static final int MAX_UNCOMPRESSED_PAYLOAD = 16 * 1024 * 1024; // 16MB limit per entry to prevent OOM
+    private final byte[] fileData;
+    private ContainerHeader header;
+    private ContainerIndex index;
+    private Map&lt;String, MetadataValue&gt; metadata;
+    private EncryptionProvider encryptionProvider;
+
+<span class="fc" id="L25">    public AuraContainerReader(byte[] fileData) {</span>
+<span class="fc" id="L26">        this.fileData = Preconditions.checkNotNull(fileData, &quot;File data cannot be null&quot;).clone();</span>
+<span class="fc" id="L27">        parseContainer();</span>
+<span class="fc" id="L28">    }</span>
+
+    public void setEncryptionProvider(EncryptionProvider encryptionProvider) {
+<span class="fc" id="L31">        this.encryptionProvider = encryptionProvider;</span>
+<span class="fc" id="L32">    }</span>
+
+    private void parseContainer() {
+<span class="pc bpc" id="L35" title="1 of 2 branches missed.">        if (fileData.length &lt; ContainerConstants.HEADER_SIZE) {</span>
+<span class="nc" id="L36">            throw new ContainerException(&quot;Container data is smaller than minimum header size&quot;);</span>
+        }
+
+        // 1. Parse Header
+<span class="fc" id="L40">        byte[] headerBytes = Arrays.copyOfRange(fileData, 0, ContainerConstants.HEADER_SIZE);</span>
+<span class="fc" id="L41">        this.header = ContainerHeader.parse(headerBytes);</span>
+
+        // 2. Validate Offsets
+<span class="fc" id="L44">        long metadataOffset = header.getMetadataOffset();</span>
+<span class="fc" id="L45">        long indexOffset = header.getIndexOffset();</span>
+
+<span class="pc bpc" id="L47" title="2 of 4 branches missed.">        if (metadataOffset &gt;= fileData.length || indexOffset &gt;= fileData.length) {</span>
+<span class="nc" id="L48">            throw new ContainerException(&quot;Header offsets point beyond file size&quot;);</span>
+        }
+
+        // 3. Parse Index Block (runs to EOF or next block)
+        // Find index length
+<span class="fc" id="L53">        int indexLen = (int) (fileData.length - indexOffset);</span>
+<span class="pc bpc" id="L54" title="1 of 2 branches missed.">        if (metadataOffset &gt; indexOffset) {</span>
+<span class="nc" id="L55">            indexLen = (int) (metadataOffset - indexOffset);</span>
+        }
+<span class="pc bpc" id="L57" title="1 of 2 branches missed.">        if (indexLen &lt;= 0) {</span>
+<span class="nc" id="L58">            throw new ContainerException(&quot;Invalid index block length calculation&quot;);</span>
+        }
+
+<span class="fc" id="L61">        byte[] indexData = new byte[indexLen];</span>
+<span class="fc" id="L62">        System.arraycopy(fileData, (int) indexOffset, indexData, 0, indexLen);</span>
+<span class="fc" id="L63">        this.index = ContainerIndex.parse(indexData);</span>
+
+        // 4. Parse Metadata Block
+<span class="fc" id="L66">        int metadataLen = (int) (fileData.length - metadataOffset);</span>
+<span class="pc bpc" id="L67" title="1 of 2 branches missed.">        if (indexOffset &gt; metadataOffset) {</span>
+<span class="fc" id="L68">            metadataLen = (int) (indexOffset - metadataOffset);</span>
+        }
+<span class="pc bpc" id="L70" title="1 of 2 branches missed.">        if (metadataLen &lt;= 0) {</span>
+<span class="nc" id="L71">            throw new ContainerException(&quot;Invalid metadata block length calculation&quot;);</span>
+        }
+
+<span class="fc" id="L74">        byte[] metadataData = new byte[metadataLen];</span>
+<span class="fc" id="L75">        System.arraycopy(fileData, (int) metadataOffset, metadataData, 0, metadataLen);</span>
+        try {
+<span class="fc" id="L77">            this.metadata = BinaryMetadataReader.read(metadataData);</span>
+<span class="nc" id="L78">        } catch (IOException e) {</span>
+<span class="nc" id="L79">            throw new ContainerException(&quot;Failed to decode container metadata block&quot;, e);</span>
+<span class="fc" id="L80">        }</span>
+<span class="fc" id="L81">    }</span>
+
+    /**
+     * Reads a resource payload by name, verifying integrity and applying de-processing (decryption/decompression).
+     */
+    public byte[] readResource(String name) {
+<span class="fc" id="L87">        Preconditions.checkNotNull(name, &quot;Resource name cannot be null&quot;);</span>
+<span class="fc" id="L88">        ContainerIndexEntry entry = index.findEntry(name);</span>
+<span class="pc bpc" id="L89" title="1 of 2 branches missed.">        if (entry == null) {</span>
+<span class="nc" id="L90">            throw new ContainerException(&quot;Resource not found in container: &quot; + name);</span>
+        }
+
+<span class="fc" id="L93">        long offset = entry.getOffset();</span>
+<span class="fc" id="L94">        long compressedLen = entry.getCompressedLength();</span>
+<span class="fc" id="L95">        long uncompressedLen = entry.getLength();</span>
+
+<span class="pc bpc" id="L97" title="2 of 4 branches missed.">        if (offset &lt; ContainerConstants.HEADER_SIZE || offset + compressedLen &gt; fileData.length) {</span>
+<span class="nc" id="L98">            throw new ContainerException(String.format(&quot;Resource offsets point outside file bounds: offset=%d, size=%d, fileLen=%d&quot;,</span>
+<span class="nc" id="L99">                offset, compressedLen, fileData.length));</span>
+        }
+
+<span class="fc" id="L102">        byte[] rawPayload = new byte[(int) compressedLen];</span>
+<span class="fc" id="L103">        System.arraycopy(fileData, (int) offset, rawPayload, 0, (int) compressedLen);</span>
+
+        // 1. Verify CRC32 checksum of the raw payload (as stored)
+<span class="fc" id="L106">        long computedChecksum = Crc32.compute(rawPayload);</span>
+<span class="pc bpc" id="L107" title="1 of 2 branches missed.">        if (computedChecksum != entry.getPayloadChecksum()) {</span>
+<span class="nc" id="L108">            throw new ContainerException(String.format(&quot;Integrity failure for resource '%s': expected checksum 0x%X, got 0x%X&quot;,</span>
+<span class="nc" id="L109">                name, entry.getPayloadChecksum(), computedChecksum));</span>
+        }
+
+        // 2. Decrypt if container flags or compression layout dictates
+<span class="fc" id="L113">        byte[] processedData = rawPayload;</span>
+<span class="pc bpc" id="L114" title="1 of 2 branches missed.">        boolean encrypted = (header.getFlags() &amp; 0x01) != 0;</span>
+<span class="pc bpc" id="L115" title="1 of 2 branches missed.">        if (encrypted) {</span>
+<span class="pc bpc" id="L116" title="1 of 2 branches missed.">            if (encryptionProvider == null) {</span>
+<span class="nc" id="L117">                throw new ContainerException(&quot;Resource is encrypted but no EncryptionProvider is configured&quot;);</span>
+            }
+<span class="fc" id="L119">            processedData = encryptionProvider.decrypt(processedData);</span>
+        }
+
+        // 3. Decompress if compression is applied
+<span class="fc" id="L123">        byte compCode = entry.getCompressionType();</span>
+<span class="fc" id="L124">        CompressionAlgorithm algo = CompressionAlgorithm.fromCode(compCode);</span>
+<span class="pc bpc" id="L125" title="1 of 2 branches missed.">        if (algo != CompressionAlgorithm.NONE) {</span>
+<span class="fc" id="L126">            int safetyLimit = (int) Math.min(MAX_UNCOMPRESSED_PAYLOAD, uncompressedLen * 2 + 1024);</span>
+<span class="fc" id="L127">            processedData = CompressionProvider.decompress(processedData, algo, safetyLimit);</span>
+        }
+
+        // 4. Verify uncompressed length matches expected
+<span class="pc bpc" id="L131" title="1 of 2 branches missed.">        if (processedData.length != uncompressedLen) {</span>
+<span class="nc" id="L132">            throw new ContainerException(String.format(&quot;Resource size mismatch after decompression: expected %d bytes, got %d bytes&quot;,</span>
+<span class="nc" id="L133">                uncompressedLen, processedData.length));</span>
+        }
+
+<span class="fc" id="L136">        return processedData;</span>
+    }
+
+<span class="nc" id="L139">    public ContainerHeader getHeader() { return header; }</span>
+<span class="nc" id="L140">    public ContainerIndex getIndex() { return index; }</span>
+<span class="fc" id="L141">    public Map&lt;String, MetadataValue&gt; getMetadata() { return metadata; }</span>
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.11.202310140853</span></div></body></html>

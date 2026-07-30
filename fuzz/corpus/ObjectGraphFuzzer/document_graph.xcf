@@ -1,0 +1,21 @@
+{
+    id: "root"
+    type: "document"
+    attributes: {
+        title: "System Spec"
+        author: "Engineering"
+    }
+    children: [
+        {
+            id: "p1"
+            type: "paragraph"
+            text: "Introduction of layout flow"
+            attributes: { ref: "s1" }
+        }
+        {
+            id: "s1"
+            type: "script"
+            expression: "2 * count + 1"
+        }
+    ]
+}

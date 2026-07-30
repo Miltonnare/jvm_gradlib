@@ -1,0 +1,68 @@
+# Aura Document Processor Fuzzing Dictionary
+
+# Magic Signature
+"AURA"
+
+# XCF syntax structures and punctuation
+"{"
+"}"
+"["
+"]"
+":"
+","
+"#"
+"//"
+
+# XCF schema keywords
+"true"
+"false"
+"null"
+"type"
+"required"
+"minimum"
+"maximum"
+"minLength"
+"maxLength"
+"pattern"
+"properties"
+"items"
+"minItems"
+"maxItems"
+
+# Document AST node names and fields
+"document"
+"paragraph"
+"image"
+"table"
+"script"
+"id"
+"text"
+"src"
+"width"
+"height"
+"rows"
+"cols"
+"cells"
+"row"
+"col"
+"attributes"
+"children"
+"ref"
+
+# Math script tokens
+"+"
+"-"
+"*"
+"/"
+"("
+")"
+
+# TLV metadata type tag indicators (Hex)
+"\x01"
+"\x02"
+"\x03"
+"\x04"
+"\x05"
+"\x06"
+"\x07"
+"\x08"

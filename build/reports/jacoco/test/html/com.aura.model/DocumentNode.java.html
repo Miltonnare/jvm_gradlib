@@ -1,0 +1,77 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>DocumentNode.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">aura-document-processor</a> &gt; <a href="index.source.html" class="el_package">com.aura.model</a> &gt; <span class="el_source">DocumentNode.java</span></div><h1>DocumentNode.java</h1><pre class="source lang-java linenums">package com.aura.model;
+
+import com.aura.internal.Preconditions;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.LinkedHashMap;
+import java.util.List;
+import java.util.Map;
+
+/**
+ * Base abstract class for nodes in the Document Graph.
+ */
+public abstract class DocumentNode {
+    private final String id;
+<span class="fc" id="L15">    private final Map&lt;String, String&gt; attributes = new LinkedHashMap&lt;&gt;();</span>
+<span class="fc" id="L16">    private final List&lt;DocumentNode&gt; children = new ArrayList&lt;&gt;();</span>
+    private DocumentNode parent;
+
+<span class="fc" id="L19">    protected DocumentNode(String id) {</span>
+<span class="fc" id="L20">        this.id = Preconditions.checkNotNull(id, &quot;Node ID cannot be null&quot;);</span>
+<span class="fc" id="L21">    }</span>
+
+    public String getId() {
+<span class="fc" id="L24">        return id;</span>
+    }
+
+    public void setAttribute(String key, String value) {
+<span class="fc" id="L28">        Preconditions.checkNotNull(key, &quot;Attribute key cannot be null&quot;);</span>
+<span class="fc" id="L29">        Preconditions.checkNotNull(value, &quot;Attribute value cannot be null&quot;);</span>
+<span class="fc" id="L30">        attributes.put(key, value);</span>
+<span class="fc" id="L31">    }</span>
+
+    public String getAttribute(String key) {
+<span class="fc" id="L34">        return attributes.get(key);</span>
+    }
+
+    public Map&lt;String, String&gt; getAttributes() {
+<span class="fc" id="L38">        return Collections.unmodifiableMap(attributes);</span>
+    }
+
+    public void addChild(DocumentNode child) {
+<span class="fc" id="L42">        Preconditions.checkNotNull(child, &quot;Child node cannot be null&quot;);</span>
+<span class="pc bpc" id="L43" title="1 of 2 branches missed.">        Preconditions.checkArgument(child != this, &quot;Cannot add node as a child of itself&quot;);</span>
+<span class="fc bfc" id="L44" title="All 2 branches covered.">        if (child.parent != null) {</span>
+<span class="fc" id="L45">            child.parent.removeChild(child);</span>
+        }
+<span class="fc" id="L47">        child.parent = this;</span>
+<span class="fc" id="L48">        children.add(child);</span>
+<span class="fc" id="L49">    }</span>
+
+    public void removeChild(DocumentNode child) {
+<span class="fc" id="L52">        Preconditions.checkNotNull(child, &quot;Child node cannot be null&quot;);</span>
+<span class="pc bpc" id="L53" title="1 of 2 branches missed.">        if (children.remove(child)) {</span>
+<span class="fc" id="L54">            child.parent = null;</span>
+        }
+<span class="fc" id="L56">    }</span>
+
+    public DocumentNode getParent() {
+<span class="nc" id="L59">        return parent;</span>
+    }
+
+    public List&lt;DocumentNode&gt; getChildren() {
+<span class="fc" id="L63">        return Collections.unmodifiableList(children);</span>
+    }
+
+    public abstract String getNodeType();
+
+    public abstract void accept(DocumentVisitor visitor);
+
+    public interface DocumentVisitor {
+        void visit(ParagraphNode paragraph);
+        void visit(ImageNode image);
+        void visit(TableNode table);
+        void visit(ScriptNode script);
+    }
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.11.202310140853</span></div></body></html>

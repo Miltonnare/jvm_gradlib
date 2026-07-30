@@ -1,0 +1,14 @@
+fuzz_targets:
+- ContainerParserFuzzer
+- ArchiveDecoderFuzzer
+- MetadataParserFuzzer
+- ObjectGraphFuzzer
+- StreamReaderFuzzer
+- BinaryIndexFuzzer
+- ConfigurationParserFuzzer
+- EventReplayFuzzer
+- QueryParserFuzzer
+- KeyRingParserFuzzer
+- HtmlImporterFuzzer
+- MarkdownImporterFuzzer
+- CssStyleParserFuzzer

@@ -1,0 +1,93 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>MarkdownRenderer.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">aura-document-processor</a> &gt; <a href="index.source.html" class="el_package">com.aura.pipeline</a> &gt; <span class="el_source">MarkdownRenderer.java</span></div><h1>MarkdownRenderer.java</h1><pre class="source lang-java linenums">package com.aura.pipeline;
+
+import com.aura.internal.Preconditions;
+import com.aura.model.DocumentNode;
+import com.aura.model.ImageNode;
+import com.aura.model.ParagraphNode;
+import com.aura.model.ScriptNode;
+import com.aura.model.TableNode;
+
+/**
+ * Renders a document graph to GitHub Flavored Markdown (GFM).
+ */
+<span class="fc" id="L13">public class MarkdownRenderer implements DocumentNode.DocumentVisitor, TransformationPipeline.Stage&lt;DocumentNode, String&gt; {</span>
+<span class="fc" id="L14">    private final StringBuilder sb = new StringBuilder();</span>
+
+    public String render(DocumentNode node) {
+<span class="fc" id="L17">        Preconditions.checkNotNull(node, &quot;Node cannot be null&quot;);</span>
+<span class="fc" id="L18">        sb.setLength(0);</span>
+<span class="fc" id="L19">        traverse(node);</span>
+<span class="fc" id="L20">        return sb.toString();</span>
+    }
+
+    private void traverse(DocumentNode node) {
+<span class="fc" id="L24">        node.accept(this);</span>
+<span class="pc bpc" id="L25" title="1 of 2 branches missed.">        if (!(node instanceof TableNode)) {</span>
+<span class="nc bnc" id="L26" title="All 2 branches missed.">            for (DocumentNode child : node.getChildren()) {</span>
+<span class="nc" id="L27">                traverse(child);</span>
+<span class="nc" id="L28">            }</span>
+        }
+<span class="fc" id="L30">    }</span>
+
+    @Override
+    public void visit(ParagraphNode paragraph) {
+<span class="nc" id="L34">        sb.append(paragraph.getText()).append(&quot;\n\n&quot;);</span>
+<span class="nc" id="L35">    }</span>
+
+    @Override
+    public void visit(ImageNode image) {
+<span class="nc" id="L39">        String alt = image.getAttribute(&quot;alt&quot;);</span>
+<span class="nc bnc" id="L40" title="All 4 branches missed.">        if (alt == null || alt.isEmpty()) {</span>
+<span class="nc" id="L41">            alt = image.getId();</span>
+        }
+<span class="nc" id="L43">        sb.append(&quot;![&quot;)</span>
+<span class="nc" id="L44">          .append(alt)</span>
+<span class="nc" id="L45">          .append(&quot;](&quot;)</span>
+<span class="nc" id="L46">          .append(image.getSrc())</span>
+<span class="nc" id="L47">          .append(&quot;)\n\n&quot;);</span>
+<span class="nc" id="L48">    }</span>
+
+    @Override
+    public void visit(TableNode table) {
+        // Render Markdown Table
+<span class="fc" id="L53">        int rows = table.getRowCount();</span>
+<span class="fc" id="L54">        int cols = table.getColCount();</span>
+
+<span class="fc bfc" id="L56" title="All 2 branches covered.">        for (int r = 0; r &lt; rows; r++) {</span>
+<span class="fc" id="L57">            sb.append(&quot;| &quot;);</span>
+<span class="fc bfc" id="L58" title="All 2 branches covered.">            for (int c = 0; c &lt; cols; c++) {</span>
+<span class="fc" id="L59">                DocumentNode cell = table.getCell(r, c);</span>
+<span class="fc bfc" id="L60" title="All 2 branches covered.">                if (cell != null) {</span>
+                    // Extract text inline
+<span class="fc" id="L62">                    String cellText = new TextExtractor().extract(cell).replace(&quot;\n&quot;, &quot; &quot;);</span>
+<span class="fc" id="L63">                    sb.append(cellText);</span>
+                }
+<span class="fc" id="L65">                sb.append(&quot; | &quot;);</span>
+            }
+<span class="fc" id="L67">            sb.append(&quot;\n&quot;);</span>
+
+            // Add separator row after header
+<span class="fc bfc" id="L70" title="All 2 branches covered.">            if (r == 0) {</span>
+<span class="fc" id="L71">                sb.append(&quot;|&quot;);</span>
+<span class="fc bfc" id="L72" title="All 2 branches covered.">                for (int c = 0; c &lt; cols; c++) {</span>
+<span class="fc" id="L73">                    sb.append(&quot; --- |&quot;);</span>
+                }
+<span class="fc" id="L75">                sb.append(&quot;\n&quot;);</span>
+            }
+        }
+<span class="fc" id="L78">        sb.append(&quot;\n&quot;);</span>
+<span class="fc" id="L79">    }</span>
+
+    @Override
+    public void visit(ScriptNode script) {
+<span class="nc" id="L83">        sb.append(&quot;```math\n&quot;)</span>
+<span class="nc" id="L84">          .append(script.getExpression())</span>
+<span class="nc" id="L85">          .append(&quot;\n```\n\n&quot;);</span>
+<span class="nc" id="L86">    }</span>
+
+    @Override
+    public String process(DocumentNode input) {
+<span class="nc" id="L90">        return render(input);</span>
+    }
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.11.202310140853</span></div></body></html>

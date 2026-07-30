@@ -1,0 +1,199 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>AuraKeyRing.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">aura-document-processor</a> &gt; <a href="index.source.html" class="el_package">com.aura.codec.encryption</a> &gt; <span class="el_source">AuraKeyRing.java</span></div><h1>AuraKeyRing.java</h1><pre class="source lang-java linenums">package com.aura.codec.encryption;
+
+import com.aura.internal.ByteUtils;
+import com.aura.internal.Crc32;
+import com.aura.internal.Preconditions;
+import java.io.ByteArrayInputStream;
+import java.io.ByteArrayOutputStream;
+import java.io.IOException;
+import java.io.InputStream;
+import java.nio.charset.StandardCharsets;
+import java.util.Collections;
+import java.util.LinkedHashMap;
+import java.util.Map;
+
+/**
+ * Manages serialization and parsing of cryptographic keyrings in a secure binary format.
+ */
+<span class="fc" id="L18">public class AuraKeyRing {</span>
+<span class="fc" id="L19">    private static final byte[] MAGIC = {(byte) 'K', (byte) 'Y', (byte) 'R', (byte) 'G'};</span>
+    private static final int MAX_KEYS = 256;
+    private static final int MAX_KEY_SIZE = 128;
+    private static final int MAX_NAME_SIZE = 256;
+
+<span class="fc" id="L24">    private final Map&lt;String, KeyEntry&gt; keys = new LinkedHashMap&lt;&gt;();</span>
+
+    public static final class KeyEntry {
+        private final byte algorithm;
+        private final byte[] key;
+        private final byte[] iv;
+
+<span class="fc" id="L31">        public KeyEntry(byte algorithm, byte[] key, byte[] iv) {</span>
+<span class="fc" id="L32">            this.algorithm = algorithm;</span>
+<span class="fc" id="L33">            this.key = Preconditions.checkNotNull(key, &quot;Key bytes cannot be null&quot;).clone();</span>
+<span class="fc bfc" id="L34" title="All 2 branches covered.">            this.iv = iv != null ? iv.clone() : null;</span>
+<span class="fc" id="L35">        }</span>
+
+<span class="fc" id="L37">        public byte getAlgorithm() { return algorithm; }</span>
+<span class="fc" id="L38">        public byte[] getKey() { return key.clone(); }</span>
+<span class="fc bfc" id="L39" title="All 2 branches covered.">        public byte[] getIv() { return iv != null ? iv.clone() : null; }</span>
+    }
+
+    public void addKey(String name, byte algorithm, byte[] key, byte[] iv) {
+<span class="fc" id="L43">        Preconditions.checkNotNull(name, &quot;Key name cannot be null&quot;);</span>
+<span class="pc bpc" id="L44" title="1 of 2 branches missed.">        Preconditions.checkArgument(!name.isEmpty(), &quot;Key name cannot be empty&quot;);</span>
+<span class="fc" id="L45">        keys.put(name, new KeyEntry(algorithm, key, iv));</span>
+<span class="fc" id="L46">    }</span>
+
+    public KeyEntry getKey(String name) {
+<span class="fc" id="L49">        return keys.get(name);</span>
+    }
+
+    public Map&lt;String, KeyEntry&gt; getKeys() {
+<span class="fc" id="L53">        return Collections.unmodifiableMap(keys);</span>
+    }
+
+    public byte[] serialize() throws IOException {
+<span class="fc" id="L57">        ByteArrayOutputStream baos = new ByteArrayOutputStream();</span>
+        
+        // 1. Write Header
+<span class="fc" id="L60">        baos.write(MAGIC);</span>
+<span class="fc" id="L61">        baos.write(1); // Version 1</span>
+        
+<span class="fc" id="L63">        byte[] countBytes = new byte[2];</span>
+<span class="fc" id="L64">        ByteUtils.writeShortBe(countBytes, 0, (short) keys.size());</span>
+<span class="fc" id="L65">        baos.write(countBytes);</span>
+
+        // Dummy checksum slot
+<span class="fc" id="L68">        byte[] crcBuf = new byte[4];</span>
+<span class="fc" id="L69">        baos.write(crcBuf);</span>
+
+        // 2. Write Entries
+<span class="fc" id="L72">        ByteArrayOutputStream entriesOs = new ByteArrayOutputStream();</span>
+<span class="fc bfc" id="L73" title="All 2 branches covered.">        for (Map.Entry&lt;String, KeyEntry&gt; entry : keys.entrySet()) {</span>
+<span class="fc" id="L74">            byte[] nameBytes = entry.getKey().getBytes(StandardCharsets.UTF_8);</span>
+<span class="pc bpc" id="L75" title="1 of 2 branches missed.">            Preconditions.checkArgument(nameBytes.length &lt;= MAX_NAME_SIZE, &quot;Key name too long&quot;);</span>
+            
+<span class="fc" id="L77">            byte[] nameLenBuf = new byte[2];</span>
+<span class="fc" id="L78">            ByteUtils.writeShortBe(nameLenBuf, 0, (short) nameBytes.length);</span>
+<span class="fc" id="L79">            entriesOs.write(nameLenBuf);</span>
+<span class="fc" id="L80">            entriesOs.write(nameBytes);</span>
+
+<span class="fc" id="L82">            KeyEntry keyEntry = entry.getValue();</span>
+<span class="fc" id="L83">            entriesOs.write(keyEntry.algorithm);</span>
+
+<span class="fc" id="L85">            byte[] keyLenBuf = new byte[2];</span>
+<span class="fc" id="L86">            ByteUtils.writeShortBe(keyLenBuf, 0, (short) keyEntry.key.length);</span>
+<span class="fc" id="L87">            entriesOs.write(keyLenBuf);</span>
+<span class="fc" id="L88">            entriesOs.write(keyEntry.key);</span>
+
+<span class="fc" id="L90">            byte[] ivLenBuf = new byte[2];</span>
+<span class="fc bfc" id="L91" title="All 2 branches covered.">            if (keyEntry.iv != null) {</span>
+<span class="fc" id="L92">                ByteUtils.writeShortBe(ivLenBuf, 0, (short) keyEntry.iv.length);</span>
+<span class="fc" id="L93">                entriesOs.write(ivLenBuf);</span>
+<span class="fc" id="L94">                entriesOs.write(keyEntry.iv);</span>
+            } else {
+<span class="fc" id="L96">                ByteUtils.writeShortBe(ivLenBuf, 0, (short) 0);</span>
+<span class="fc" id="L97">                entriesOs.write(ivLenBuf);</span>
+            }
+<span class="fc" id="L99">        }</span>
+
+<span class="fc" id="L101">        byte[] serializedEntries = entriesOs.toByteArray();</span>
+<span class="fc" id="L102">        long crc = Crc32.compute(serializedEntries);</span>
+
+<span class="fc" id="L104">        byte[] finalBytes = baos.toByteArray();</span>
+        // Write actual checksum
+<span class="fc" id="L106">        ByteUtils.writeIntBe(finalBytes, 7, (int) crc);</span>
+
+        // Write entries
+<span class="fc" id="L109">        ByteArrayOutputStream finalOs = new ByteArrayOutputStream();</span>
+<span class="fc" id="L110">        finalOs.write(finalBytes);</span>
+<span class="fc" id="L111">        finalOs.write(serializedEntries);</span>
+
+<span class="fc" id="L113">        return finalOs.toByteArray();</span>
+    }
+
+    public static AuraKeyRing parse(byte[] data) throws IOException {
+<span class="fc" id="L117">        Preconditions.checkNotNull(data, &quot;Data cannot be null&quot;);</span>
+<span class="fc bfc" id="L118" title="All 2 branches covered.">        if (data.length &lt; 11) {</span>
+<span class="fc" id="L119">            throw new IllegalArgumentException(&quot;KeyRing data truncated&quot;);</span>
+        }
+
+        // 1. Verify Magic
+<span class="fc bfc" id="L123" title="All 2 branches covered.">        for (int i = 0; i &lt; 4; i++) {</span>
+<span class="fc bfc" id="L124" title="All 2 branches covered.">            if (data[i] != MAGIC[i]) {</span>
+<span class="fc" id="L125">                throw new IllegalArgumentException(&quot;Invalid KeyRing magic signature&quot;);</span>
+            }
+        }
+
+<span class="fc" id="L129">        byte version = data[4];</span>
+<span class="pc bpc" id="L130" title="1 of 2 branches missed.">        if (version != 1) {</span>
+<span class="nc" id="L131">            throw new IllegalArgumentException(&quot;Unsupported KeyRing version: &quot; + version);</span>
+        }
+
+<span class="fc" id="L134">        int count = ByteUtils.readShortBe(data, 5) &amp; 0xFFFF;</span>
+<span class="pc bpc" id="L135" title="2 of 4 branches missed.">        if (count &lt; 0 || count &gt; MAX_KEYS) {</span>
+<span class="nc" id="L136">            throw new IllegalArgumentException(&quot;Invalid KeyRing key count: &quot; + count);</span>
+        }
+
+<span class="fc" id="L139">        long expectedCrc = ByteUtils.readIntBe(data, 7) &amp; 0xFFFFFFFFL;</span>
+<span class="fc" id="L140">        long computedCrc = Crc32.compute(data, 11, data.length - 11);</span>
+<span class="pc bpc" id="L141" title="1 of 2 branches missed.">        if (expectedCrc != computedCrc) {</span>
+<span class="nc" id="L142">            throw new IllegalArgumentException(String.format(&quot;KeyRing checksum mismatch: expected 0x%X, got 0x%X&quot;,</span>
+<span class="nc" id="L143">                expectedCrc, computedCrc));</span>
+        }
+
+<span class="fc" id="L146">        ByteArrayInputStream bais = new ByteArrayInputStream(data, 11, data.length - 11);</span>
+<span class="fc" id="L147">        AuraKeyRing keyring = new AuraKeyRing();</span>
+
+<span class="fc bfc" id="L149" title="All 2 branches covered.">        for (int i = 0; i &lt; count; i++) {</span>
+<span class="fc" id="L150">            byte[] nameLenBuf = new byte[2];</span>
+<span class="pc bpc" id="L151" title="1 of 2 branches missed.">            if (readFully(bais, nameLenBuf) &lt; 2) throw new IllegalArgumentException(&quot;Truncated KeyRing key name size&quot;);</span>
+<span class="fc" id="L152">            int nameLen = ByteUtils.readShortBe(nameLenBuf, 0) &amp; 0xFFFF;</span>
+<span class="pc bpc" id="L153" title="1 of 2 branches missed.">            if (nameLen &gt; MAX_NAME_SIZE) throw new IllegalArgumentException(&quot;Key name exceeds size limit&quot;);</span>
+
+<span class="fc" id="L155">            byte[] nameBytes = new byte[nameLen];</span>
+<span class="pc bpc" id="L156" title="1 of 2 branches missed.">            if (readFully(bais, nameBytes) &lt; nameLen) throw new IllegalArgumentException(&quot;Truncated KeyRing key name&quot;);</span>
+<span class="fc" id="L157">            String name = new String(nameBytes, StandardCharsets.UTF_8);</span>
+
+<span class="fc" id="L159">            int algo = bais.read();</span>
+<span class="pc bpc" id="L160" title="1 of 2 branches missed.">            if (algo == -1) throw new IllegalArgumentException(&quot;Truncated KeyRing algorithm ID&quot;);</span>
+
+<span class="fc" id="L162">            byte[] keyLenBuf = new byte[2];</span>
+<span class="pc bpc" id="L163" title="1 of 2 branches missed.">            if (readFully(bais, keyLenBuf) &lt; 2) throw new IllegalArgumentException(&quot;Truncated KeyRing key size&quot;);</span>
+<span class="fc" id="L164">            int keyLen = ByteUtils.readShortBe(keyLenBuf, 0) &amp; 0xFFFF;</span>
+<span class="pc bpc" id="L165" title="1 of 2 branches missed.">            if (keyLen &gt; MAX_KEY_SIZE) throw new IllegalArgumentException(&quot;Key size exceeds safety limit&quot;);</span>
+
+<span class="fc" id="L167">            byte[] keyBytes = new byte[keyLen];</span>
+<span class="pc bpc" id="L168" title="1 of 2 branches missed.">            if (readFully(bais, keyBytes) &lt; keyLen) throw new IllegalArgumentException(&quot;Truncated KeyRing key bytes&quot;);</span>
+
+<span class="fc" id="L170">            byte[] ivLenBuf = new byte[2];</span>
+<span class="pc bpc" id="L171" title="1 of 2 branches missed.">            if (readFully(bais, ivLenBuf) &lt; 2) throw new IllegalArgumentException(&quot;Truncated KeyRing IV size&quot;);</span>
+<span class="fc" id="L172">            int ivLen = ByteUtils.readShortBe(ivLenBuf, 0) &amp; 0xFFFF;</span>
+<span class="pc bpc" id="L173" title="1 of 2 branches missed.">            if (ivLen &gt; MAX_KEY_SIZE) throw new IllegalArgumentException(&quot;IV size exceeds safety limit&quot;);</span>
+
+<span class="fc" id="L175">            byte[] ivBytes = null;</span>
+<span class="fc bfc" id="L176" title="All 2 branches covered.">            if (ivLen &gt; 0) {</span>
+<span class="fc" id="L177">                ivBytes = new byte[ivLen];</span>
+<span class="pc bpc" id="L178" title="1 of 2 branches missed.">                if (readFully(bais, ivBytes) &lt; ivLen) throw new IllegalArgumentException(&quot;Truncated KeyRing IV bytes&quot;);</span>
+            }
+
+<span class="fc" id="L181">            keyring.addKey(name, (byte) algo, keyBytes, ivBytes);</span>
+        }
+
+<span class="fc" id="L184">        return keyring;</span>
+    }
+
+    private static int readFully(InputStream in, byte[] b) throws IOException {
+<span class="fc" id="L188">        int total = 0;</span>
+<span class="fc bfc" id="L189" title="All 2 branches covered.">        while (total &lt; b.length) {</span>
+<span class="fc" id="L190">            int result = in.read(b, total, b.length - total);</span>
+<span class="pc bpc" id="L191" title="1 of 2 branches missed.">            if (result == -1) {</span>
+<span class="nc bnc" id="L192" title="All 2 branches missed.">                return total == 0 ? -1 : total;</span>
+            }
+<span class="fc" id="L194">            total += result;</span>
+<span class="fc" id="L195">        }</span>
+<span class="fc" id="L196">        return total;</span>
+    }
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.11.202310140853</span></div></body></html>

@@ -1,0 +1,72 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>DocumentTopologicalSort.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">aura-document-processor</a> &gt; <a href="index.source.html" class="el_package">com.aura.validation</a> &gt; <span class="el_source">DocumentTopologicalSort.java</span></div><h1>DocumentTopologicalSort.java</h1><pre class="source lang-java linenums">package com.aura.validation;
+
+import com.aura.internal.Preconditions;
+import com.aura.model.DocumentNode;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
+
+/**
+ * Computes a topological sort on the Document Graph to resolve dependency order
+ * and verify the absence of cycle constraints.
+ */
+<span class="fc" id="L17">public class DocumentTopologicalSort {</span>
+
+    /**
+     * Performs a topological sort on the document graph and returns a list of sorted node IDs.
+     * Throws ValidationException if a cycle is detected.
+     */
+    public List&lt;String&gt; sort(DocumentNode root) throws ValidationException {
+<span class="fc" id="L24">        Preconditions.checkNotNull(root, &quot;Root node cannot be null&quot;);</span>
+        
+<span class="fc" id="L26">        List&lt;String&gt; order = new ArrayList&lt;&gt;();</span>
+<span class="fc" id="L27">        Set&lt;String&gt; visited = new HashSet&lt;&gt;();</span>
+<span class="fc" id="L28">        Set&lt;String&gt; visiting = new HashSet&lt;&gt;();</span>
+
+        // Map parent-child connections
+<span class="fc" id="L31">        Map&lt;String, List&lt;String&gt;&gt; adj = new HashMap&lt;&gt;();</span>
+<span class="fc" id="L32">        buildAdjacencyList(root, adj, new HashSet&lt;&gt;());</span>
+
+        // Sort starting from root
+<span class="fc" id="L35">        dfs(root.getId(), adj, visited, visiting, order);</span>
+
+        // Reverse to get correct topological order (dependencies first)
+<span class="fc" id="L38">        Collections.reverse(order);</span>
+<span class="fc" id="L39">        return order;</span>
+    }
+
+    private void dfs(String node, Map&lt;String, List&lt;String&gt;&gt; adj, Set&lt;String&gt; visited, Set&lt;String&gt; visiting, List&lt;String&gt; order) throws ValidationException {
+<span class="fc bfc" id="L43" title="All 2 branches covered.">        if (visiting.contains(node)) {</span>
+<span class="fc" id="L44">            throw new ValidationException(&quot;Dependency cycle detected in graph containing node: &quot; + node);</span>
+        }
+<span class="pc bpc" id="L46" title="1 of 2 branches missed.">        if (visited.contains(node)) {</span>
+<span class="nc" id="L47">            return;</span>
+        }
+
+<span class="fc" id="L50">        visiting.add(node);</span>
+<span class="fc" id="L51">        List&lt;String&gt; children = adj.getOrDefault(node, Collections.emptyList());</span>
+<span class="fc bfc" id="L52" title="All 2 branches covered.">        for (String child : children) {</span>
+<span class="fc" id="L53">            dfs(child, adj, visited, visiting, order);</span>
+<span class="fc" id="L54">        }</span>
+
+<span class="fc" id="L56">        visiting.remove(node);</span>
+<span class="fc" id="L57">        visited.add(node);</span>
+<span class="fc" id="L58">        order.add(node);</span>
+<span class="fc" id="L59">    }</span>
+
+    private void buildAdjacencyList(DocumentNode node, Map&lt;String, List&lt;String&gt;&gt; adj, Set&lt;String&gt; visited) {
+<span class="pc bpc" id="L62" title="1 of 4 branches missed.">        if (node == null || visited.contains(node.getId())) return;</span>
+<span class="fc" id="L63">        visited.add(node.getId());</span>
+<span class="fc" id="L64">        List&lt;String&gt; childrenIds = new ArrayList&lt;&gt;();</span>
+<span class="fc bfc" id="L65" title="All 2 branches covered.">        for (DocumentNode child : node.getChildren()) {</span>
+<span class="fc" id="L66">            childrenIds.add(child.getId());</span>
+<span class="fc" id="L67">            buildAdjacencyList(child, adj, visited);</span>
+<span class="fc" id="L68">        }</span>
+<span class="fc" id="L69">        adj.put(node.getId(), childrenIds);</span>
+<span class="fc" id="L70">    }</span>
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.11.202310140853</span></div></body></html>

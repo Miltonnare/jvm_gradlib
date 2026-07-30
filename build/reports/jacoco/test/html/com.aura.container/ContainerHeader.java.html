@@ -1,0 +1,89 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>ContainerHeader.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">aura-document-processor</a> &gt; <a href="index.source.html" class="el_package">com.aura.container</a> &gt; <span class="el_source">ContainerHeader.java</span></div><h1>ContainerHeader.java</h1><pre class="source lang-java linenums">package com.aura.container;
+
+import com.aura.internal.ByteUtils;
+import com.aura.internal.Crc32;
+import com.aura.internal.Preconditions;
+import java.util.Arrays;
+
+/**
+ * Representation and verification of the binary Aura Container Header.
+ */
+public class ContainerHeader {
+    private final byte majorVersion;
+    private final byte minorVersion;
+    private final short flags;
+    private final long metadataOffset;
+    private final long indexOffset;
+    private final long headerChecksum;
+
+<span class="fc" id="L19">    public ContainerHeader(byte majorVersion, byte minorVersion, short flags, long metadataOffset, long indexOffset, long headerChecksum) {</span>
+<span class="fc" id="L20">        this.majorVersion = majorVersion;</span>
+<span class="fc" id="L21">        this.minorVersion = minorVersion;</span>
+<span class="fc" id="L22">        this.flags = flags;</span>
+<span class="fc" id="L23">        this.metadataOffset = metadataOffset;</span>
+<span class="fc" id="L24">        this.indexOffset = indexOffset;</span>
+<span class="fc" id="L25">        this.headerChecksum = headerChecksum;</span>
+<span class="fc" id="L26">    }</span>
+
+    public static ContainerHeader parse(byte[] headerData) {
+<span class="fc" id="L29">        Preconditions.checkNotNull(headerData, &quot;Header data cannot be null&quot;);</span>
+<span class="pc bpc" id="L30" title="1 of 2 branches missed.">        if (headerData.length &lt; ContainerConstants.HEADER_SIZE) {</span>
+<span class="nc" id="L31">            throw new ContainerException(&quot;Header data is truncated&quot;);</span>
+        }
+
+        // 1. Verify Magic
+<span class="fc" id="L35">        byte[] magic = Arrays.copyOfRange(headerData, 0, 4);</span>
+<span class="pc bpc" id="L36" title="1 of 2 branches missed.">        if (!Arrays.equals(magic, ContainerConstants.MAGIC)) {</span>
+<span class="nc" id="L37">            throw new ContainerException(&quot;Invalid container magic signature: &quot; + ByteUtils.toHexString(magic));</span>
+        }
+
+        // 2. Verify Checksum of the header block
+<span class="fc" id="L41">        long expectedChecksum = ByteUtils.readIntBe(headerData, 24) &amp; 0xFFFFFFFFL;</span>
+<span class="fc" id="L42">        long computedChecksum = Crc32.compute(headerData, 0, 24);</span>
+<span class="pc bpc" id="L43" title="1 of 2 branches missed.">        if (expectedChecksum != computedChecksum) {</span>
+<span class="nc" id="L44">            throw new ContainerException(String.format(&quot;Header checksum verification failed: expected 0x%X but computed 0x%X&quot;,</span>
+<span class="nc" id="L45">                expectedChecksum, computedChecksum));</span>
+        }
+
+<span class="fc" id="L48">        byte major = headerData[4];</span>
+<span class="fc" id="L49">        byte minor = headerData[5];</span>
+<span class="pc bpc" id="L50" title="1 of 2 branches missed.">        if (major != 1) {</span>
+<span class="nc" id="L51">            throw new ContainerException(&quot;Unsupported container major version: &quot; + major);</span>
+        }
+
+<span class="fc" id="L54">        short flags = ByteUtils.readShortBe(headerData, 6);</span>
+<span class="fc" id="L55">        long metadataOffset = ByteUtils.readLongBe(headerData, 8);</span>
+<span class="fc" id="L56">        long indexOffset = ByteUtils.readLongBe(headerData, 16);</span>
+
+<span class="pc bpc" id="L58" title="2 of 4 branches missed.">        if (metadataOffset &lt; ContainerConstants.HEADER_SIZE || indexOffset &lt; ContainerConstants.HEADER_SIZE) {</span>
+<span class="nc" id="L59">            throw new ContainerException(String.format(&quot;Invalid offset in header: metadataOffset=%d, indexOffset=%d&quot;,</span>
+<span class="nc" id="L60">                metadataOffset, indexOffset));</span>
+        }
+
+<span class="fc" id="L63">        return new ContainerHeader(major, minor, flags, metadataOffset, indexOffset, expectedChecksum);</span>
+    }
+
+    public byte[] serialize() {
+<span class="fc" id="L67">        byte[] data = new byte[ContainerConstants.HEADER_SIZE];</span>
+<span class="fc" id="L68">        System.arraycopy(ContainerConstants.MAGIC, 0, data, 0, 4);</span>
+<span class="fc" id="L69">        data[4] = majorVersion;</span>
+<span class="fc" id="L70">        data[5] = minorVersion;</span>
+<span class="fc" id="L71">        ByteUtils.writeShortBe(data, 6, flags);</span>
+<span class="fc" id="L72">        ByteUtils.writeLongBe(data, 8, metadataOffset);</span>
+<span class="fc" id="L73">        ByteUtils.writeLongBe(data, 16, indexOffset);</span>
+
+        // Compute and write checksum
+<span class="fc" id="L76">        long crc = Crc32.compute(data, 0, 24);</span>
+<span class="fc" id="L77">        ByteUtils.writeIntBe(data, 24, (int) crc);</span>
+
+<span class="fc" id="L79">        return data;</span>
+    }
+
+<span class="nc" id="L82">    public byte getMajorVersion() { return majorVersion; }</span>
+<span class="nc" id="L83">    public byte getMinorVersion() { return minorVersion; }</span>
+<span class="fc" id="L84">    public short getFlags() { return flags; }</span>
+<span class="fc" id="L85">    public long getMetadataOffset() { return metadataOffset; }</span>
+<span class="fc" id="L86">    public long getIndexOffset() { return indexOffset; }</span>
+<span class="nc" id="L87">    public long getHeaderChecksum() { return headerChecksum; }</span>
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.11.202310140853</span></div></body></html>

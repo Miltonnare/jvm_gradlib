@@ -1,0 +1,330 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>HtmlImporter.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">aura-document-processor</a> &gt; <a href="index.source.html" class="el_package">com.aura.pipeline</a> &gt; <span class="el_source">HtmlImporter.java</span></div><h1>HtmlImporter.java</h1><pre class="source lang-java linenums">package com.aura.pipeline;
+
+import com.aura.internal.Preconditions;
+import com.aura.model.DocumentNode;
+import com.aura.model.ImageNode;
+import com.aura.model.ParagraphNode;
+import com.aura.model.ScriptNode;
+import com.aura.model.TableNode;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.Stack;
+import java.util.UUID;
+
+/**
+ * Custom parser to reconstruct a DocumentNode layout tree from HTML5 strings.
+ */
+<span class="fc" id="L19">public class HtmlImporter implements TransformationPipeline.Stage&lt;String, DocumentNode&gt; {</span>
+    private static final int MAX_NESTING = 32;
+
+    public DocumentNode importHtml(String html) {
+<span class="fc" id="L23">        Preconditions.checkNotNull(html, &quot;HTML string cannot be null&quot;);</span>
+<span class="fc" id="L24">        List&lt;Token&gt; tokens = tokenize(html);</span>
+<span class="fc" id="L25">        return parse(tokens);</span>
+    }
+
+    private static class Token {
+<span class="fc" id="L29">        enum Type { OPEN_TAG, CLOSE_TAG, SELF_CLOSE_TAG, TEXT }</span>
+        final Type type;
+        final String tagName;
+        final Map&lt;String, String&gt; attributes;
+        final String text;
+
+<span class="fc" id="L35">        Token(Type type, String tagName, Map&lt;String, String&gt; attributes, String text) {</span>
+<span class="fc" id="L36">            this.type = type;</span>
+<span class="fc" id="L37">            this.tagName = tagName;</span>
+<span class="fc" id="L38">            this.attributes = attributes;</span>
+<span class="fc" id="L39">            this.text = text;</span>
+<span class="fc" id="L40">        }</span>
+    }
+
+    private List&lt;Token&gt; tokenize(String html) {
+<span class="fc" id="L44">        List&lt;Token&gt; tokens = new ArrayList&lt;&gt;();</span>
+<span class="fc" id="L45">        int i = 0;</span>
+<span class="fc" id="L46">        int len = html.length();</span>
+
+<span class="fc bfc" id="L48" title="All 2 branches covered.">        while (i &lt; len) {</span>
+<span class="fc" id="L49">            char c = html.charAt(i);</span>
+<span class="fc bfc" id="L50" title="All 2 branches covered.">            if (c == '&lt;') {</span>
+<span class="fc" id="L51">                int closeIdx = html.indexOf('&gt;', i);</span>
+<span class="fc bfc" id="L52" title="All 2 branches covered.">                if (closeIdx == -1) {</span>
+<span class="fc" id="L53">                    throw new IllegalArgumentException(&quot;Malformed HTML: unclosed tag starting at &quot; + i);</span>
+                }
+<span class="fc" id="L55">                String tagContent = html.substring(i + 1, closeIdx).trim();</span>
+<span class="fc" id="L56">                i = closeIdx + 1;</span>
+
+<span class="fc bfc" id="L58" title="All 2 branches covered.">                if (tagContent.startsWith(&quot;/&quot;)) {</span>
+                    // Close tag
+<span class="fc" id="L60">                    String name = tagContent.substring(1).trim();</span>
+<span class="fc" id="L61">                    tokens.add(new Token(Token.Type.CLOSE_TAG, name, null, null));</span>
+<span class="fc bfc" id="L62" title="All 2 branches covered.">                } else if (tagContent.endsWith(&quot;/&quot;)) {</span>
+                    // Self-closing tag
+<span class="fc" id="L64">                    String tagBody = tagContent.substring(0, tagContent.length() - 1).trim();</span>
+<span class="fc" id="L65">                    String name = getTagName(tagBody);</span>
+<span class="fc" id="L66">                    Map&lt;String, String&gt; attrs = parseAttributes(tagBody);</span>
+<span class="fc" id="L67">                    tokens.add(new Token(Token.Type.SELF_CLOSE_TAG, name, attrs, null));</span>
+<span class="fc" id="L68">                } else {</span>
+                    // Open tag
+<span class="fc" id="L70">                    String name = getTagName(tagContent);</span>
+<span class="fc" id="L71">                    Map&lt;String, String&gt; attrs = parseAttributes(tagContent);</span>
+                    // Special check: img and br are self-closing by standard html
+<span class="pc bpc" id="L73" title="2 of 4 branches missed.">                    if (&quot;img&quot;.equalsIgnoreCase(name) || &quot;br&quot;.equalsIgnoreCase(name)) {</span>
+<span class="nc" id="L74">                        tokens.add(new Token(Token.Type.SELF_CLOSE_TAG, name, attrs, null));</span>
+                    } else {
+<span class="fc" id="L76">                        tokens.add(new Token(Token.Type.OPEN_TAG, name, attrs, null));</span>
+                    }
+                }
+<span class="fc" id="L79">            } else {</span>
+<span class="fc" id="L80">                int nextTag = html.indexOf('&lt;', i);</span>
+                String text;
+<span class="pc bpc" id="L82" title="1 of 2 branches missed.">                if (nextTag == -1) {</span>
+<span class="nc" id="L83">                    text = html.substring(i);</span>
+<span class="nc" id="L84">                    i = len;</span>
+                } else {
+<span class="fc" id="L86">                    text = html.substring(i, nextTag);</span>
+<span class="fc" id="L87">                    i = nextTag;</span>
+                }
+<span class="fc bfc" id="L89" title="All 2 branches covered.">                if (!text.trim().isEmpty()) {</span>
+<span class="fc" id="L90">                    tokens.add(new Token(Token.Type.TEXT, null, null, text.trim()));</span>
+                }
+            }
+<span class="fc" id="L93">        }</span>
+<span class="fc" id="L94">        return tokens;</span>
+    }
+
+    private String getTagName(String tagContent) {
+<span class="fc" id="L98">        int space = tagContent.indexOf(' ');</span>
+<span class="fc bfc" id="L99" title="All 2 branches covered.">        return space == -1 ? tagContent : tagContent.substring(0, space);</span>
+    }
+
+    private Map&lt;String, String&gt; parseAttributes(String tagContent) {
+<span class="fc" id="L103">        Map&lt;String, String&gt; attrs = new HashMap&lt;&gt;();</span>
+<span class="fc" id="L104">        int space = tagContent.indexOf(' ');</span>
+<span class="fc bfc" id="L105" title="All 2 branches covered.">        if (space == -1) {</span>
+<span class="fc" id="L106">            return attrs;</span>
+        }
+<span class="fc" id="L108">        String body = tagContent.substring(space + 1).trim();</span>
+<span class="fc" id="L109">        int idx = 0;</span>
+<span class="fc" id="L110">        int len = body.length();</span>
+
+<span class="fc bfc" id="L112" title="All 2 branches covered.">        while (idx &lt; len) {</span>
+<span class="pc bpc" id="L113" title="1 of 4 branches missed.">            while (idx &lt; len &amp;&amp; Character.isWhitespace(body.charAt(idx))) {</span>
+<span class="fc" id="L114">                idx++;</span>
+            }
+<span class="pc bpc" id="L116" title="1 of 2 branches missed.">            if (idx &gt;= len) break;</span>
+
+<span class="fc" id="L118">            int eq = body.indexOf('=', idx);</span>
+<span class="pc bpc" id="L119" title="1 of 2 branches missed.">            if (eq == -1) {</span>
+                // Key existence check
+<span class="nc" id="L121">                String key = body.substring(idx).trim();</span>
+<span class="nc bnc" id="L122" title="All 2 branches missed.">                if (!key.isEmpty()) {</span>
+<span class="nc" id="L123">                    attrs.put(key, &quot;true&quot;);</span>
+                }
+                break;
+            }
+<span class="fc" id="L127">            String key = body.substring(idx, eq).trim();</span>
+<span class="fc" id="L128">            idx = eq + 1;</span>
+
+<span class="pc bpc" id="L130" title="2 of 4 branches missed.">            while (idx &lt; len &amp;&amp; Character.isWhitespace(body.charAt(idx))) {</span>
+<span class="nc" id="L131">                idx++;</span>
+            }
+<span class="pc bpc" id="L133" title="1 of 2 branches missed.">            if (idx &gt;= len) break;</span>
+
+<span class="fc" id="L135">            char quote = body.charAt(idx);</span>
+<span class="pc bpc" id="L136" title="3 of 4 branches missed.">            if (quote == '&quot;' || quote == '\'') {</span>
+<span class="fc" id="L137">                int endQuote = body.indexOf(quote, idx + 1);</span>
+<span class="pc bpc" id="L138" title="1 of 2 branches missed.">                if (endQuote == -1) {</span>
+                    // String fallback
+<span class="nc" id="L140">                    String val = body.substring(idx + 1).trim();</span>
+<span class="nc" id="L141">                    attrs.put(key, val);</span>
+<span class="nc" id="L142">                    break;</span>
+                }
+<span class="fc" id="L144">                String val = body.substring(idx + 1, endQuote);</span>
+<span class="fc" id="L145">                attrs.put(key, val);</span>
+<span class="fc" id="L146">                idx = endQuote + 1;</span>
+<span class="fc" id="L147">            } else {</span>
+<span class="nc" id="L148">                int nextSpace = body.indexOf(' ', idx);</span>
+                String val;
+<span class="nc bnc" id="L150" title="All 2 branches missed.">                if (nextSpace == -1) {</span>
+<span class="nc" id="L151">                    val = body.substring(idx).trim();</span>
+<span class="nc" id="L152">                    idx = len;</span>
+                } else {
+<span class="nc" id="L154">                    val = body.substring(idx, nextSpace);</span>
+<span class="nc" id="L155">                    idx = nextSpace + 1;</span>
+                }
+<span class="nc" id="L157">                attrs.put(key, val);</span>
+            }
+<span class="fc" id="L159">        }</span>
+<span class="fc" id="L160">        return attrs;</span>
+    }
+
+    private DocumentNode parse(List&lt;Token&gt; tokens) {
+<span class="fc" id="L164">        Stack&lt;DocumentNode&gt; stack = new Stack&lt;&gt;();</span>
+<span class="fc" id="L165">        DocumentNode root = null;</span>
+        
+        // Mock default container row/col tracker for table cells
+<span class="fc" id="L168">        Stack&lt;TableLayoutState&gt; tableStack = new Stack&lt;&gt;();</span>
+
+<span class="fc bfc" id="L170" title="All 2 branches covered.">        for (Token t : tokens) {</span>
+<span class="pc bpc" id="L171" title="1 of 2 branches missed.">            if (stack.size() &gt; MAX_NESTING) {</span>
+<span class="nc" id="L172">                throw new IllegalStateException(&quot;HTML nesting exceeds maximum safety depth&quot;);</span>
+            }
+
+<span class="pc bpc" id="L175" title="1 of 5 branches missed.">            switch (t.type) {</span>
+                case OPEN_TAG -&gt; {
+<span class="fc" id="L177">                    DocumentNode node = createNode(t.tagName, t.attributes);</span>
+<span class="fc bfc" id="L178" title="All 2 branches covered.">                    if (root == null) {</span>
+<span class="fc" id="L179">                        root = node;</span>
+<span class="pc bpc" id="L180" title="1 of 2 branches missed.">                    } else if (!stack.isEmpty()) {</span>
+<span class="fc" id="L181">                        DocumentNode parent = stack.peek();</span>
+<span class="pc bpc" id="L182" title="1 of 4 branches missed.">                        if (parent instanceof TableNode tbl &amp;&amp; &quot;tr&quot;.equalsIgnoreCase(node.getNodeType())) {</span>
+                            // TableNode handles cells, tr is just logical, but let's track state
+<span class="fc" id="L184">                            tableStack.peek().currentRow++;</span>
+<span class="fc" id="L185">                            tableStack.peek().currentCol = -1;</span>
+<span class="fc bfc" id="L186" title="All 4 branches covered.">                        } else if (&quot;td&quot;.equalsIgnoreCase(node.getNodeType()) || &quot;th&quot;.equalsIgnoreCase(node.getNodeType())) {</span>
+                            // Table cell
+<span class="fc" id="L188">                            tableStack.peek().currentCol++;</span>
+                        } else {
+<span class="fc" id="L190">                            parent.addChild(node);</span>
+                        }
+                    }
+                    
+<span class="fc bfc" id="L194" title="All 2 branches covered.">                    if (&quot;table&quot;.equalsIgnoreCase(t.tagName)) {</span>
+<span class="pc bpc" id="L195" title="1 of 2 branches missed.">                        int r = t.attributes.containsKey(&quot;rows&quot;) ? Integer.parseInt(t.attributes.get(&quot;rows&quot;)) : 8;</span>
+<span class="pc bpc" id="L196" title="1 of 2 branches missed.">                        int c = t.attributes.containsKey(&quot;cols&quot;) ? Integer.parseInt(t.attributes.get(&quot;cols&quot;)) : 8;</span>
+<span class="fc" id="L197">                        tableStack.push(new TableLayoutState(r, c));</span>
+                    }
+                    
+<span class="fc" id="L200">                    stack.push(node);</span>
+<span class="fc" id="L201">                }</span>
+                case CLOSE_TAG -&gt; {
+<span class="fc bfc" id="L203" title="All 2 branches covered.">                    if (stack.isEmpty()) {</span>
+<span class="fc" id="L204">                        throw new IllegalArgumentException(&quot;Orphan close tag: &lt;/&quot; + t.tagName + &quot;&gt;&quot;);</span>
+                    }
+<span class="fc" id="L206">                    DocumentNode closed = stack.pop();</span>
+<span class="fc bfc" id="L207" title="All 2 branches covered.">                    if (!matchesTagName(closed, t.tagName)) {</span>
+<span class="fc" id="L208">                        throw new IllegalArgumentException(String.format(&quot;Mismatched HTML close tag: expected &lt;/%s&gt; but got &lt;/%s&gt;&quot;,</span>
+<span class="fc" id="L209">                            closed.getNodeType(), t.tagName));</span>
+                    }
+<span class="fc bfc" id="L211" title="All 2 branches covered.">                    if (&quot;table&quot;.equalsIgnoreCase(t.tagName)) {</span>
+<span class="fc" id="L212">                        tableStack.pop();</span>
+                    }
+<span class="fc" id="L214">                }</span>
+                case SELF_CLOSE_TAG -&gt; {
+<span class="fc" id="L216">                    DocumentNode node = createNode(t.tagName, t.attributes);</span>
+<span class="pc bpc" id="L217" title="1 of 2 branches missed.">                    if (root == null) {</span>
+<span class="nc" id="L218">                        root = node;</span>
+<span class="pc bpc" id="L219" title="1 of 2 branches missed.">                    } else if (!stack.isEmpty()) {</span>
+<span class="fc" id="L220">                        DocumentNode parent = stack.peek();</span>
+<span class="fc" id="L221">                        parent.addChild(node);</span>
+                    }
+<span class="fc" id="L223">                }</span>
+                case TEXT -&gt; {
+<span class="pc bpc" id="L225" title="1 of 2 branches missed.">                    if (!stack.isEmpty()) {</span>
+<span class="fc" id="L226">                        DocumentNode parent = stack.peek();</span>
+<span class="fc bfc" id="L227" title="All 2 branches covered.">                        if (parent instanceof ParagraphNode p) {</span>
+<span class="pc bpc" id="L228" title="1 of 2 branches missed.">                            p.setText(p.getText() + (p.getText().isEmpty() ? &quot;&quot; : &quot; &quot;) + t.text);</span>
+                        } else {
+                            // Create inline paragraph under parent
+<span class="fc" id="L231">                            ParagraphNode p = new ParagraphNode(UUID.randomUUID().toString(), t.text);</span>
+                            
+                            // If parent is a TableRow simulation (represented by cell tags)
+<span class="pc bpc" id="L234" title="2 of 6 branches missed.">                            if (!tableStack.isEmpty() &amp;&amp; (&quot;td&quot;.equalsIgnoreCase(parent.getNodeType()) || &quot;th&quot;.equalsIgnoreCase(parent.getNodeType()))) {</span>
+<span class="fc" id="L235">                                TableLayoutState state = tableStack.peek();</span>
+                                // Find table node (must be further down the stack)
+<span class="fc" id="L237">                                TableNode tblNode = findTableNode(stack);</span>
+<span class="pc bpc" id="L238" title="1 of 2 branches missed.">                                if (tblNode != null) {</span>
+<span class="fc" id="L239">                                    tblNode.setCell(state.currentRow, state.currentCol, p);</span>
+                                }
+<span class="fc" id="L241">                            } else {</span>
+<span class="nc" id="L242">                                parent.addChild(p);</span>
+                            }
+                        }
+                    }
+                }
+            }
+<span class="fc" id="L248">        }</span>
+
+<span class="fc bfc" id="L250" title="All 2 branches covered.">        if (root == null) {</span>
+<span class="fc" id="L251">            throw new IllegalArgumentException(&quot;Empty HTML document&quot;);</span>
+        }
+<span class="fc" id="L253">        return root;</span>
+    }
+
+    private TableNode findTableNode(Stack&lt;DocumentNode&gt; stack) {
+<span class="pc bpc" id="L257" title="1 of 2 branches missed.">        for (int i = stack.size() - 1; i &gt;= 0; i--) {</span>
+<span class="fc bfc" id="L258" title="All 2 branches covered.">            if (stack.get(i) instanceof TableNode tbl) {</span>
+<span class="fc" id="L259">                return tbl;</span>
+            }
+        }
+<span class="nc" id="L262">        return null;</span>
+    }
+
+    private DocumentNode createNode(String name, Map&lt;String, String&gt; attrs) {
+<span class="fc" id="L266">        String id = attrs.getOrDefault(&quot;id&quot;, UUID.randomUUID().toString());</span>
+        DocumentNode node;
+<span class="pc bpc" id="L268" title="1 of 5 branches missed.">        switch (name.toLowerCase()) {</span>
+<span class="fc" id="L269">            case &quot;p&quot; -&gt; node = new ParagraphNode(id, &quot;&quot;);</span>
+            case &quot;img&quot; -&gt; {
+<span class="fc" id="L271">                String src = attrs.getOrDefault(&quot;src&quot;, &quot;&quot;);</span>
+<span class="pc bpc" id="L272" title="1 of 2 branches missed.">                int w = attrs.containsKey(&quot;width&quot;) ? Integer.parseInt(attrs.get(&quot;width&quot;)) : 100;</span>
+<span class="pc bpc" id="L273" title="1 of 2 branches missed.">                int h = attrs.containsKey(&quot;height&quot;) ? Integer.parseInt(attrs.get(&quot;height&quot;)) : 100;</span>
+<span class="fc" id="L274">                node = new ImageNode(id, src, w, h);</span>
+<span class="fc" id="L275">            }</span>
+            case &quot;table&quot; -&gt; {
+<span class="pc bpc" id="L277" title="1 of 2 branches missed.">                int r = attrs.containsKey(&quot;rows&quot;) ? Integer.parseInt(attrs.get(&quot;rows&quot;)) : 8;</span>
+<span class="pc bpc" id="L278" title="1 of 2 branches missed.">                int c = attrs.containsKey(&quot;cols&quot;) ? Integer.parseInt(attrs.get(&quot;cols&quot;)) : 8;</span>
+<span class="fc" id="L279">                node = new TableNode(id, r, c);</span>
+<span class="fc" id="L280">            }</span>
+            case &quot;code&quot; -&gt; {
+                // Treats code tag as script expression
+<span class="nc" id="L283">                node = new ScriptNode(id, &quot;&quot;);</span>
+<span class="nc" id="L284">            }</span>
+            default -&gt; {
+                // Fallback generic tag container
+<span class="fc" id="L287">                node = new DocumentNode(id) {</span>
+<span class="fc" id="L288">                    @Override public String getNodeType() { return name; }</span>
+<span class="nc" id="L289">                    @Override public void accept(DocumentVisitor visitor) {}</span>
+                };
+            }
+        }
+
+        // Apply attributes
+<span class="fc bfc" id="L295" title="All 2 branches covered.">        for (Map.Entry&lt;String, String&gt; attr : attrs.entrySet()) {</span>
+<span class="fc bfc" id="L296" title="All 2 branches covered.">            if (!&quot;id&quot;.equalsIgnoreCase(attr.getKey())) {</span>
+<span class="fc" id="L297">                node.setAttribute(attr.getKey(), attr.getValue());</span>
+            }
+<span class="fc" id="L299">        }</span>
+<span class="fc" id="L300">        return node;</span>
+    }
+
+    private static class TableLayoutState {
+        int rows;
+        int cols;
+<span class="fc" id="L306">        int currentRow = -1;</span>
+<span class="fc" id="L307">        int currentCol = -1;</span>
+
+<span class="fc" id="L309">        TableLayoutState(int rows, int cols) {</span>
+<span class="fc" id="L310">            this.rows = rows;</span>
+<span class="fc" id="L311">            this.cols = cols;</span>
+<span class="fc" id="L312">        }</span>
+    }
+
+    private boolean matchesTagName(DocumentNode node, String tagName) {
+<span class="fc" id="L316">        String nodeType = node.getNodeType();</span>
+<span class="pc bpc" id="L317" title="2 of 4 branches missed.">        switch (tagName.toLowerCase()) {</span>
+<span class="fc" id="L318">            case &quot;p&quot; -&gt; { return &quot;paragraph&quot;.equalsIgnoreCase(nodeType); }</span>
+<span class="nc" id="L319">            case &quot;img&quot; -&gt; { return &quot;image&quot;.equalsIgnoreCase(nodeType); }</span>
+<span class="nc" id="L320">            case &quot;code&quot; -&gt; { return &quot;script&quot;.equalsIgnoreCase(nodeType); }</span>
+<span class="fc" id="L321">            default -&gt; { return nodeType.equalsIgnoreCase(tagName); }</span>
+        }
+    }
+
+    @Override
+    public DocumentNode process(String input) {
+<span class="nc" id="L327">        return importHtml(input);</span>
+    }
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.11.202310140853</span></div></body></html>

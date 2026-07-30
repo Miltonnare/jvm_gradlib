@@ -1,0 +1,168 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>Lz77Compression.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">aura-document-processor</a> &gt; <a href="index.source.html" class="el_package">com.aura.codec.compression</a> &gt; <span class="el_source">Lz77Compression.java</span></div><h1>Lz77Compression.java</h1><pre class="source lang-java linenums">package com.aura.codec.compression;
+
+import com.aura.internal.ByteUtils;
+import com.aura.internal.Preconditions;
+import com.aura.stream.BitInputStream;
+import com.aura.stream.BitOutputStream;
+import java.io.ByteArrayInputStream;
+import java.io.ByteArrayOutputStream;
+import java.io.IOException;
+
+/**
+ * Implementation of bit-packed LZ77 compression and decompression.
+ * Prefixes the compressed stream with a 4-byte uncompressed length header.
+ * Uses a sliding window size of 1024 bytes and a lookahead buffer of 18 bytes.
+ */
+public final class Lz77Compression {
+    private static final int WINDOW_SIZE = 1024;
+    private static final int MAX_MATCH_LEN = 18;
+    private static final int MIN_MATCH_LEN = 3;
+
+    private Lz77Compression() {
+        // Prevent instantiation
+    }
+
+    /**
+     * Compresses the input data using LZ77 sliding window.
+     */
+    public static byte[] compress(byte[] data) throws IOException {
+<span class="fc" id="L29">        Preconditions.checkNotNull(data, &quot;Data cannot be null&quot;);</span>
+<span class="fc bfc" id="L30" title="All 2 branches covered.">        if (data.length == 0) {</span>
+<span class="fc" id="L31">            return new byte[0];</span>
+        }
+
+<span class="fc" id="L34">        ByteArrayOutputStream baos = new ByteArrayOutputStream();</span>
+        // Prepend uncompressed length (4 bytes)
+<span class="fc" id="L36">        byte[] lenBytes = new byte[4];</span>
+<span class="fc" id="L37">        ByteUtils.writeIntBe(lenBytes, 0, data.length);</span>
+<span class="fc" id="L38">        baos.write(lenBytes);</span>
+
+<span class="fc" id="L40">        try (BitOutputStream bos = new BitOutputStream(baos)) {</span>
+<span class="fc" id="L41">            int cursor = 0;</span>
+<span class="fc bfc" id="L42" title="All 2 branches covered.">            while (cursor &lt; data.length) {</span>
+<span class="fc" id="L43">                int matchLength = 0;</span>
+<span class="fc" id="L44">                int matchOffset = 0;</span>
+
+                // Find longest match in the sliding window
+<span class="fc" id="L47">                int windowStart = Math.max(0, cursor - WINDOW_SIZE);</span>
+<span class="fc bfc" id="L48" title="All 2 branches covered.">                for (int i = windowStart; i &lt; cursor; i++) {</span>
+<span class="fc" id="L49">                    int len = 0;</span>
+<span class="fc bfc" id="L50" title="All 6 branches covered.">                    while (len &lt; MAX_MATCH_LEN &amp;&amp; cursor + len &lt; data.length </span>
+                           &amp;&amp; data[i + len] == data[cursor + len]) {
+<span class="fc" id="L52">                        len++;</span>
+                    }
+
+<span class="fc bfc" id="L55" title="All 2 branches covered.">                    if (len &gt; matchLength) {</span>
+<span class="fc" id="L56">                        matchLength = len;</span>
+<span class="fc" id="L57">                        matchOffset = cursor - i;</span>
+                    }
+                }
+
+<span class="fc bfc" id="L61" title="All 2 branches covered.">                if (matchLength &gt;= MIN_MATCH_LEN) {</span>
+                    // Write back-reference token: bit 1
+<span class="fc" id="L63">                    bos.writeBit(1);</span>
+                    // Offset: 10 bits (WINDOW_SIZE = 1024)
+                    // Offset value is 1-indexed (1 to 1024)
+<span class="fc" id="L66">                    bos.writeBits(matchOffset - 1, 10);</span>
+                    // Length: 4 bits (MIN_MATCH_LEN = 3, value range 0 to 15 maps to length 3 to 18)
+<span class="fc" id="L68">                    bos.writeBits(matchLength - MIN_MATCH_LEN, 4);</span>
+<span class="fc" id="L69">                    cursor += matchLength;</span>
+                } else {
+                    // Write literal token: bit 0 followed by 8-bit literal byte
+<span class="fc" id="L72">                    bos.writeBit(0);</span>
+<span class="fc" id="L73">                    bos.writeBits(data[cursor] &amp; 0xFF, 8);</span>
+<span class="fc" id="L74">                    cursor++;</span>
+                }
+<span class="fc" id="L76">            }</span>
+<span class="fc" id="L77">            bos.flushBits();</span>
+        }
+<span class="fc" id="L79">        return baos.toByteArray();</span>
+    }
+
+    /**
+     * Decompresses the data.
+     */
+    public static byte[] decompress(byte[] compressed, int maxUncompressedSize) throws IOException {
+<span class="fc" id="L86">        Preconditions.checkNotNull(compressed, &quot;Compressed data cannot be null&quot;);</span>
+<span class="pc bpc" id="L87" title="1 of 2 branches missed.">        Preconditions.checkArgument(maxUncompressedSize &gt;= 0, &quot;Max size must be non-negative&quot;);</span>
+<span class="fc bfc" id="L88" title="All 2 branches covered.">        if (compressed.length == 0) {</span>
+<span class="fc" id="L89">            return new byte[0];</span>
+        }
+
+<span class="fc" id="L92">        ByteArrayInputStream bais = new ByteArrayInputStream(compressed);</span>
+<span class="fc" id="L93">        byte[] lenBytes = new byte[4];</span>
+<span class="pc bpc" id="L94" title="1 of 2 branches missed.">        if (bais.read(lenBytes) &lt; 4) {</span>
+<span class="nc" id="L95">            throw new IllegalArgumentException(&quot;Truncated LZ77 stream header&quot;);</span>
+        }
+<span class="fc" id="L97">        int expectedLength = ByteUtils.readIntBe(lenBytes, 0);</span>
+<span class="pc bpc" id="L98" title="2 of 4 branches missed.">        if (expectedLength &lt; 0 || expectedLength &gt; maxUncompressedSize) {</span>
+<span class="nc" id="L99">            throw new IllegalStateException(&quot;Invalid LZ77 expected length: &quot; + expectedLength);</span>
+        }
+<span class="pc bpc" id="L101" title="1 of 2 branches missed.">        if (expectedLength == 0) {</span>
+<span class="nc" id="L102">            return new byte[0];</span>
+        }
+
+<span class="fc" id="L105">        ByteArrayOutputStream baos = new ByteArrayOutputStream();</span>
+<span class="fc" id="L106">        byte[] history = new byte[WINDOW_SIZE];</span>
+<span class="fc" id="L107">        int historyCursor = 0;</span>
+<span class="fc" id="L108">        int totalUncompressed = 0;</span>
+
+<span class="fc" id="L110">        try (BitInputStream bis = new BitInputStream(bais)) {</span>
+<span class="fc bfc" id="L111" title="All 2 branches covered.">            while (totalUncompressed &lt; expectedLength) {</span>
+<span class="fc" id="L112">                int tokenType = bis.readBit();</span>
+<span class="pc bpc" id="L113" title="1 of 2 branches missed.">                if (tokenType == -1) {</span>
+<span class="nc" id="L114">                    throw new IllegalArgumentException(&quot;Truncated LZ77 stream before reaching expected length&quot;);</span>
+                }
+
+<span class="fc bfc" id="L117" title="All 2 branches covered.">                if (tokenType == 1) {</span>
+                    // Back-reference: read offset (10 bits) and length (4 bits)
+<span class="fc" id="L119">                    int offsetBits = bis.readBits(10);</span>
+<span class="pc bpc" id="L120" title="1 of 2 branches missed.">                    if (offsetBits == -1) {</span>
+<span class="nc" id="L121">                        throw new IllegalArgumentException(&quot;Truncated LZ77 offset bits&quot;);</span>
+                    }
+<span class="fc" id="L123">                    int lengthBits = bis.readBits(4);</span>
+<span class="pc bpc" id="L124" title="1 of 2 branches missed.">                    if (lengthBits == -1) {</span>
+<span class="nc" id="L125">                        throw new IllegalArgumentException(&quot;Truncated LZ77 length bits&quot;);</span>
+                    }
+
+<span class="fc" id="L128">                    int matchOffset = offsetBits + 1;</span>
+<span class="fc" id="L129">                    int matchLength = lengthBits + MIN_MATCH_LEN;</span>
+
+<span class="pc bpc" id="L131" title="1 of 2 branches missed.">                    if (totalUncompressed + matchLength &gt; expectedLength) {</span>
+<span class="nc" id="L132">                        throw new IllegalArgumentException(&quot;LZ77 match overflows expected length&quot;);</span>
+                    }
+
+                    // Reconstruct from sliding history
+<span class="fc bfc" id="L136" title="All 2 branches covered.">                    for (int j = 0; j &lt; matchLength; j++) {</span>
+<span class="fc" id="L137">                        int index = totalUncompressed - matchOffset;</span>
+<span class="pc bpc" id="L138" title="1 of 2 branches missed.">                        if (index &lt; 0) {</span>
+<span class="nc" id="L139">                            throw new IllegalArgumentException(&quot;Invalid LZ77 back-reference offset: &quot; + matchOffset);</span>
+                        }
+
+<span class="fc" id="L142">                        byte val = history[(historyCursor - matchOffset + WINDOW_SIZE + j) % WINDOW_SIZE];</span>
+<span class="fc" id="L143">                        baos.write(val);</span>
+
+                        // Update history
+<span class="fc" id="L146">                        history[(historyCursor + j) % WINDOW_SIZE] = val;</span>
+                    }
+<span class="fc" id="L148">                    historyCursor = (historyCursor + matchLength) % WINDOW_SIZE;</span>
+<span class="fc" id="L149">                    totalUncompressed += matchLength;</span>
+
+<span class="fc" id="L151">                } else {</span>
+                    // Literal: read 8 bits
+<span class="fc" id="L153">                    int literal = bis.readBits(8);</span>
+<span class="pc bpc" id="L154" title="1 of 2 branches missed.">                    if (literal == -1) {</span>
+<span class="nc" id="L155">                        throw new IllegalArgumentException(&quot;Truncated LZ77 literal byte&quot;);</span>
+                    }
+
+<span class="fc" id="L158">                    baos.write(literal);</span>
+<span class="fc" id="L159">                    history[historyCursor] = (byte) literal;</span>
+<span class="fc" id="L160">                    historyCursor = (historyCursor + 1) % WINDOW_SIZE;</span>
+<span class="fc" id="L161">                    totalUncompressed++;</span>
+                }
+<span class="fc" id="L163">            }</span>
+        }
+<span class="fc" id="L165">        return baos.toByteArray();</span>
+    }
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.11.202310140853</span></div></body></html>

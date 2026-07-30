@@ -1,0 +1,267 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>LayoutPaginator.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">aura-document-processor</a> &gt; <a href="index.source.html" class="el_package">com.aura.pipeline</a> &gt; <span class="el_source">LayoutPaginator.java</span></div><h1>LayoutPaginator.java</h1><pre class="source lang-java linenums">package com.aura.pipeline;
+
+import com.aura.internal.Preconditions;
+import com.aura.model.DocumentNode;
+import com.aura.model.ImageNode;
+import com.aura.model.ParagraphNode;
+import com.aura.model.ScriptNode;
+import com.aura.model.TableNode;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.List;
+
+/**
+ * Advanced Layout engine that paginates a Document Node Graph 
+ * onto discrete pages based on dimensions, wrapping paragraphs, and splitting tables.
+ */
+public class LayoutPaginator implements DocumentNode.DocumentVisitor, TransformationPipeline.Stage&lt;DocumentNode, List&lt;LayoutPaginator.Page&gt;&gt; {
+    private final double pageWidth;
+    private final double pageHeight;
+    private final double marginTop;
+    private final double marginBottom;
+    private final double marginLeft;
+    private final double marginRight;
+
+<span class="fc" id="L25">    private final List&lt;Page&gt; pages = new ArrayList&lt;&gt;();</span>
+    private Page currentPage;
+    private double currentY;
+
+    public static final class Page {
+        private final int pageNumber;
+<span class="fc" id="L31">        private final List&lt;PlacedElement&gt; elements = new ArrayList&lt;&gt;();</span>
+
+<span class="fc" id="L33">        public Page(int pageNumber) {</span>
+<span class="fc" id="L34">            this.pageNumber = pageNumber;</span>
+<span class="fc" id="L35">        }</span>
+
+<span class="fc" id="L37">        public int getPageNumber() { return pageNumber; }</span>
+<span class="fc" id="L38">        public List&lt;PlacedElement&gt; getElements() { return Collections.unmodifiableList(elements); }</span>
+        
+        public void addElement(PlacedElement el) {
+<span class="fc" id="L41">            elements.add(el);</span>
+<span class="fc" id="L42">        }</span>
+    }
+
+    public static final class PlacedElement {
+        private final DocumentNode node;
+        private final String renderText;
+        private final double x;
+        private final double y;
+        private final double width;
+        private final double height;
+
+<span class="fc" id="L53">        public PlacedElement(DocumentNode node, String renderText, double x, double y, double width, double height) {</span>
+<span class="fc" id="L54">            this.node = node;</span>
+<span class="fc" id="L55">            this.renderText = renderText;</span>
+<span class="fc" id="L56">            this.x = x;</span>
+<span class="fc" id="L57">            this.y = y;</span>
+<span class="fc" id="L58">            this.width = width;</span>
+<span class="fc" id="L59">            this.height = height;</span>
+<span class="fc" id="L60">        }</span>
+
+<span class="fc" id="L62">        public DocumentNode getNode() { return node; }</span>
+<span class="fc" id="L63">        public String getRenderText() { return renderText; }</span>
+<span class="fc" id="L64">        public double getX() { return x; }</span>
+<span class="fc" id="L65">        public double getY() { return y; }</span>
+<span class="nc" id="L66">        public double getWidth() { return width; }</span>
+<span class="nc" id="L67">        public double getHeight() { return height; }</span>
+    }
+
+    public LayoutPaginator(double pageWidth, double pageHeight, double margin) {
+<span class="fc" id="L71">        this(pageWidth, pageHeight, margin, margin, margin, margin);</span>
+<span class="fc" id="L72">    }</span>
+
+<span class="fc" id="L74">    public LayoutPaginator(double pageWidth, double pageHeight, double marginTop, double marginBottom, double marginLeft, double marginRight) {</span>
+<span class="pc bpc" id="L75" title="1 of 2 branches missed.">        Preconditions.checkArgument(pageWidth &gt; 0, &quot;Page width must be positive&quot;);</span>
+<span class="pc bpc" id="L76" title="1 of 2 branches missed.">        Preconditions.checkArgument(pageHeight &gt; 0, &quot;Page height must be positive&quot;);</span>
+<span class="fc" id="L77">        this.pageWidth = pageWidth;</span>
+<span class="fc" id="L78">        this.pageHeight = pageHeight;</span>
+<span class="fc" id="L79">        this.marginTop = marginTop;</span>
+<span class="fc" id="L80">        this.marginBottom = marginBottom;</span>
+<span class="fc" id="L81">        this.marginLeft = marginLeft;</span>
+<span class="fc" id="L82">        this.marginRight = marginRight;</span>
+<span class="fc" id="L83">    }</span>
+
+    public List&lt;Page&gt; paginate(DocumentNode root) {
+<span class="fc" id="L86">        Preconditions.checkNotNull(root, &quot;Root node cannot be null&quot;);</span>
+<span class="fc" id="L87">        pages.clear();</span>
+<span class="fc" id="L88">        startNewPage();</span>
+
+<span class="fc" id="L90">        traverse(root);</span>
+<span class="fc" id="L91">        return pages;</span>
+    }
+
+    private void traverse(DocumentNode node) {
+<span class="fc" id="L95">        node.accept(this);</span>
+        // Only traverse children if this is not a TableNode (it processes its children cells internally)
+<span class="fc bfc" id="L97" title="All 2 branches covered.">        if (!(node instanceof TableNode)) {</span>
+<span class="pc bpc" id="L98" title="1 of 2 branches missed.">            for (DocumentNode child : node.getChildren()) {</span>
+<span class="nc" id="L99">                traverse(child);</span>
+<span class="nc" id="L100">            }</span>
+        }
+<span class="fc" id="L102">    }</span>
+
+    private void startNewPage() {
+<span class="fc" id="L105">        currentPage = new Page(pages.size() + 1);</span>
+<span class="fc" id="L106">        pages.add(currentPage);</span>
+<span class="fc" id="L107">        currentY = marginTop;</span>
+<span class="fc" id="L108">    }</span>
+
+    private double getUsableWidth() {
+<span class="fc" id="L111">        return pageWidth - marginLeft - marginRight;</span>
+    }
+
+    private double getUsableHeight() {
+<span class="nc" id="L115">        return pageHeight - marginTop - marginBottom;</span>
+    }
+
+    @Override
+    public void visit(ParagraphNode paragraph) {
+        // Measure paragraph text wrap
+<span class="fc" id="L121">        String text = paragraph.getText();</span>
+<span class="fc" id="L122">        double charWidth = 6.0; // Mock character width</span>
+<span class="fc" id="L123">        double lineHeight = 14.0;</span>
+<span class="fc" id="L124">        double usableWidth = getUsableWidth();</span>
+
+<span class="fc" id="L126">        int charsPerLine = (int) Math.max(1, usableWidth / charWidth);</span>
+<span class="fc" id="L127">        List&lt;String&gt; lines = wrapText(text, charsPerLine);</span>
+
+<span class="fc bfc" id="L129" title="All 2 branches covered.">        for (String line : lines) {</span>
+<span class="fc bfc" id="L130" title="All 2 branches covered.">            if (currentY + lineHeight &gt; pageHeight - marginBottom) {</span>
+<span class="fc" id="L131">                startNewPage();</span>
+            }
+<span class="fc" id="L133">            currentPage.addElement(new PlacedElement(</span>
+                paragraph,
+                line,
+                marginLeft,
+                currentY,
+<span class="fc" id="L138">                line.length() * charWidth,</span>
+                lineHeight
+            ));
+<span class="fc" id="L141">            currentY += lineHeight;</span>
+<span class="fc" id="L142">        }</span>
+<span class="fc" id="L143">        currentY += 8.0; // Paragraph spacing</span>
+<span class="fc" id="L144">    }</span>
+
+    @Override
+    public void visit(ImageNode image) {
+<span class="nc" id="L148">        double height = image.getHeight();</span>
+<span class="nc bnc" id="L149" title="All 2 branches missed.">        if (currentY + height &gt; pageHeight - marginBottom) {</span>
+<span class="nc" id="L150">            startNewPage();</span>
+        }
+<span class="nc" id="L152">        currentPage.addElement(new PlacedElement(</span>
+            image,
+            null,
+            marginLeft,
+            currentY,
+<span class="nc" id="L157">            image.getWidth(),</span>
+            height
+        ));
+<span class="nc" id="L160">        currentY += height + 10.0; // Spacing</span>
+<span class="nc" id="L161">    }</span>
+
+    @Override
+    public void visit(TableNode table) {
+        // Table layout: measured rows and paginated row splits
+<span class="fc" id="L166">        int rows = table.getRowCount();</span>
+<span class="fc" id="L167">        int cols = table.getColCount();</span>
+<span class="fc" id="L168">        double colWidth = getUsableWidth() / cols;</span>
+<span class="fc" id="L169">        double rowHeight = 24.0; // Fix height for table rows</span>
+
+        // Keep track of header cells to repeat on page breaks
+<span class="fc" id="L172">        List&lt;DocumentNode&gt; headers = new ArrayList&lt;&gt;();</span>
+<span class="fc bfc" id="L173" title="All 2 branches covered.">        for (int c = 0; c &lt; cols; c++) {</span>
+<span class="fc" id="L174">            headers.add(table.getCell(0, c));</span>
+        }
+
+        // Output header row first
+<span class="fc" id="L178">        renderTableRow(table, 0, colWidth, rowHeight, headers);</span>
+
+<span class="fc bfc" id="L180" title="All 2 branches covered.">        for (int r = 1; r &lt; rows; r++) {</span>
+<span class="fc bfc" id="L181" title="All 2 branches covered.">            if (currentY + rowHeight &gt; pageHeight - marginBottom) {</span>
+<span class="fc" id="L182">                startNewPage();</span>
+                // Repeat headers on new page
+<span class="fc" id="L184">                renderTableRow(table, 0, colWidth, rowHeight, headers);</span>
+            }
+<span class="fc" id="L186">            renderTableRow(table, r, colWidth, rowHeight, null);</span>
+        }
+<span class="fc" id="L188">        currentY += 12.0; // Spacing</span>
+<span class="fc" id="L189">    }</span>
+
+    private void renderTableRow(TableNode table, int rowIndex, double colWidth, double rowHeight, List&lt;DocumentNode&gt; optionalOverrideCells) {
+<span class="fc" id="L192">        int cols = table.getColCount();</span>
+<span class="fc bfc" id="L193" title="All 2 branches covered.">        for (int c = 0; c &lt; cols; c++) {</span>
+<span class="fc bfc" id="L194" title="All 2 branches covered.">            DocumentNode cell = (optionalOverrideCells != null) ? optionalOverrideCells.get(c) : table.getCell(rowIndex, c);</span>
+<span class="pc bpc" id="L195" title="1 of 2 branches missed.">            if (cell != null) {</span>
+                // Placing the nested cell inside grid
+<span class="fc" id="L197">                String cellText = &quot;&quot;;</span>
+<span class="pc bpc" id="L198" title="1 of 2 branches missed.">                if (cell instanceof ParagraphNode p) {</span>
+<span class="fc" id="L199">                    cellText = p.getText();</span>
+                }
+<span class="fc" id="L201">                currentPage.addElement(new PlacedElement(</span>
+                    cell,
+                    cellText,
+                    marginLeft + (c * colWidth),
+                    currentY,
+                    colWidth,
+                    rowHeight
+                ));
+            }
+        }
+<span class="fc" id="L211">        currentY += rowHeight;</span>
+<span class="fc" id="L212">    }</span>
+
+    @Override
+    public void visit(ScriptNode script) {
+        // Scripts do not render direct content except expression block mock
+<span class="nc" id="L217">        double height = 15.0;</span>
+<span class="nc bnc" id="L218" title="All 2 branches missed.">        if (currentY + height &gt; pageHeight - marginBottom) {</span>
+<span class="nc" id="L219">            startNewPage();</span>
+        }
+<span class="nc" id="L221">        currentPage.addElement(new PlacedElement(</span>
+            script,
+<span class="nc" id="L223">            &quot;Expression: &quot; + script.getExpression(),</span>
+            marginLeft,
+            currentY,
+<span class="nc" id="L226">            getUsableWidth(),</span>
+            height
+        ));
+<span class="nc" id="L229">        currentY += height + 6.0;</span>
+<span class="nc" id="L230">    }</span>
+
+    private List&lt;String&gt; wrapText(String text, int limit) {
+<span class="fc" id="L233">        List&lt;String&gt; list = new ArrayList&lt;&gt;();</span>
+<span class="fc" id="L234">        String[] words = text.split(&quot;\\s+&quot;);</span>
+<span class="fc" id="L235">        StringBuilder sb = new StringBuilder();</span>
+
+<span class="fc bfc" id="L237" title="All 2 branches covered.">        for (String word : words) {</span>
+<span class="fc bfc" id="L238" title="All 2 branches covered.">            if (sb.length() + word.length() + 1 &gt; limit) {</span>
+<span class="pc bpc" id="L239" title="1 of 2 branches missed.">                if (sb.length() &gt; 0) {</span>
+<span class="fc" id="L240">                    list.add(sb.toString());</span>
+<span class="fc" id="L241">                    sb.setLength(0);</span>
+                }
+                // Handle single very long word
+<span class="pc bpc" id="L244" title="1 of 2 branches missed.">                if (word.length() &gt; limit) {</span>
+<span class="nc" id="L245">                    list.add(word.substring(0, limit));</span>
+                } else {
+<span class="fc" id="L247">                    sb.append(word);</span>
+                }
+            } else {
+<span class="fc bfc" id="L250" title="All 2 branches covered.">                if (sb.length() &gt; 0) {</span>
+<span class="fc" id="L251">                    sb.append(&quot; &quot;);</span>
+                }
+<span class="fc" id="L253">                sb.append(word);</span>
+            }
+        }
+<span class="pc bpc" id="L256" title="1 of 2 branches missed.">        if (sb.length() &gt; 0) {</span>
+<span class="fc" id="L257">            list.add(sb.toString());</span>
+        }
+<span class="fc" id="L259">        return list;</span>
+    }
+
+    @Override
+    public List&lt;Page&gt; process(DocumentNode input) {
+<span class="nc" id="L264">        return paginate(input);</span>
+    }
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.11.202310140853</span></div></body></html>

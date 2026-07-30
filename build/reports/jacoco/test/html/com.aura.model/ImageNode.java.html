@@ -1,0 +1,47 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>ImageNode.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">aura-document-processor</a> &gt; <a href="index.source.html" class="el_package">com.aura.model</a> &gt; <span class="el_source">ImageNode.java</span></div><h1>ImageNode.java</h1><pre class="source lang-java linenums">package com.aura.model;
+
+import com.aura.internal.Preconditions;
+
+/**
+ * Node representing an image entry with size dimensions and source URI.
+ */
+public class ImageNode extends DocumentNode {
+    private String src;
+    private int width;
+    private int height;
+
+    public ImageNode(String id, String src, int width, int height) {
+<span class="fc" id="L14">        super(id);</span>
+<span class="fc" id="L15">        this.src = Preconditions.checkNotNull(src, &quot;Source cannot be null&quot;);</span>
+<span class="pc bpc" id="L16" title="1 of 2 branches missed.">        Preconditions.checkArgument(width &gt;= 0, &quot;Width cannot be negative&quot;);</span>
+<span class="pc bpc" id="L17" title="1 of 2 branches missed.">        Preconditions.checkArgument(height &gt;= 0, &quot;Height cannot be negative&quot;);</span>
+<span class="fc" id="L18">        this.width = width;</span>
+<span class="fc" id="L19">        this.height = height;</span>
+<span class="fc" id="L20">    }</span>
+
+<span class="fc" id="L22">    public String getSrc() { return src; }</span>
+<span class="nc" id="L23">    public void setSrc(String src) { this.src = Preconditions.checkNotNull(src, &quot;Src cannot be null&quot;); }</span>
+
+<span class="fc" id="L25">    public int getWidth() { return width; }</span>
+    public void setWidth(int width) {
+<span class="nc bnc" id="L27" title="All 2 branches missed.">        Preconditions.checkArgument(width &gt;= 0, &quot;Width cannot be negative&quot;);</span>
+<span class="nc" id="L28">        this.width = width;</span>
+<span class="nc" id="L29">    }</span>
+
+<span class="fc" id="L31">    public int getHeight() { return height; }</span>
+    public void setHeight(int height) {
+<span class="nc bnc" id="L33" title="All 2 branches missed.">        Preconditions.checkArgument(height &gt;= 0, &quot;Height cannot be negative&quot;);</span>
+<span class="nc" id="L34">        this.height = height;</span>
+<span class="nc" id="L35">    }</span>
+
+    @Override
+    public String getNodeType() {
+<span class="fc" id="L39">        return &quot;image&quot;;</span>
+    }
+
+    @Override
+    public void accept(DocumentVisitor visitor) {
+<span class="nc" id="L44">        visitor.visit(this);</span>
+<span class="nc" id="L45">    }</span>
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.11.202310140853</span></div></body></html>

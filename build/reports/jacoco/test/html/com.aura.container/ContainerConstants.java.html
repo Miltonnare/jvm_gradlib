@@ -1,0 +1,25 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>ContainerConstants.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">aura-document-processor</a> &gt; <a href="index.source.html" class="el_package">com.aura.container</a> &gt; <span class="el_source">ContainerConstants.java</span></div><h1>ContainerConstants.java</h1><pre class="source lang-java linenums">package com.aura.container;
+
+/**
+ * Constants for the Aura Document Container format.
+ */
+public final class ContainerConstants {
+    private ContainerConstants() {
+        // Prevent instantiation
+    }
+
+    /**
+     * Magic signature bytes: 'A' 'U' 'R' 'A'
+     */
+<span class="fc" id="L14">    public static final byte[] MAGIC = {(byte) 'A', (byte) 'U', (byte) 'R', (byte) 'A'};</span>
+
+    public static final int HEADER_SIZE = 28; // 4 (magic) + 2 (version) + 2 (flags) + 8 (metadata offset) + 8 (index offset) + 4 (checksum)
+    
+    // File Type codes
+    public static final byte TYPE_TEXT = 0x01;
+    public static final byte TYPE_IMAGE = 0x02;
+    public static final byte TYPE_CONFIG = 0x03;
+    public static final byte TYPE_BINARY = 0x04;
+    public static final byte TYPE_COMPRESSED_STREAM = 0x05;
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.11.202310140853</span></div></body></html>

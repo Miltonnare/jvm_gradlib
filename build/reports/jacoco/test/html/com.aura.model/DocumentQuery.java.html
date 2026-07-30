@@ -1,0 +1,174 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>DocumentQuery.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">aura-document-processor</a> &gt; <a href="index.source.html" class="el_package">com.aura.model</a> &gt; <span class="el_source">DocumentQuery.java</span></div><h1>DocumentQuery.java</h1><pre class="source lang-java linenums">package com.aura.model;
+
+import com.aura.internal.Preconditions;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.List;
+
+/**
+ * A basic document tree searcher supporting path query selectors.
+ * Example path: &quot;/document/paragraph[@id='intro']&quot; or &quot;/table/cell[@col='0']&quot;.
+ */
+public class DocumentQuery {
+    private final String query;
+
+<span class="fc" id="L15">    public DocumentQuery(String query) {</span>
+<span class="fc" id="L16">        this.query = Preconditions.checkNotNull(query, &quot;Query string cannot be null&quot;);</span>
+<span class="fc" id="L17">    }</span>
+
+    /**
+     * Executes the query path search on a starting root node.
+     */
+    public List&lt;DocumentNode&gt; select(DocumentNode root) {
+<span class="fc" id="L23">        Preconditions.checkNotNull(root, &quot;Root node cannot be null&quot;);</span>
+<span class="pc bpc" id="L24" title="1 of 2 branches missed.">        if (query.trim().isEmpty()) {</span>
+<span class="nc" id="L25">            return Collections.emptyList();</span>
+        }
+
+<span class="fc" id="L28">        String cleaned = query.trim();</span>
+<span class="fc" id="L29">        boolean absolute = cleaned.startsWith(&quot;/&quot;);</span>
+<span class="pc bpc" id="L30" title="1 of 2 branches missed.">        if (absolute) {</span>
+<span class="fc" id="L31">            cleaned = cleaned.substring(1);</span>
+        }
+
+<span class="fc" id="L34">        String[] segments = cleaned.split(&quot;/&quot;);</span>
+<span class="fc" id="L35">        List&lt;DocumentNode&gt; currentCandidates = new ArrayList&lt;&gt;();</span>
+<span class="fc" id="L36">        currentCandidates.add(root);</span>
+
+<span class="fc" id="L38">        int startIdx = 0;</span>
+<span class="pc bpc" id="L39" title="3 of 6 branches missed.">        if (absolute &amp;&amp; segments.length &gt; 0 &amp;&amp; !segments[0].isEmpty()) {</span>
+<span class="fc" id="L40">            String rootSegment = segments[0];</span>
+<span class="fc" id="L41">            List&lt;DocumentNode&gt; rootMatch = evaluateSegmentSelf(root, rootSegment);</span>
+<span class="pc bpc" id="L42" title="1 of 2 branches missed.">            if (rootMatch.isEmpty()) {</span>
+<span class="nc" id="L43">                return Collections.emptyList();</span>
+            }
+<span class="fc" id="L45">            currentCandidates = rootMatch;</span>
+<span class="fc" id="L46">            startIdx = 1;</span>
+        }
+
+<span class="fc bfc" id="L49" title="All 2 branches covered.">        for (int i = startIdx; i &lt; segments.length; i++) {</span>
+<span class="fc" id="L50">            String segment = segments[i];</span>
+<span class="pc bpc" id="L51" title="1 of 2 branches missed.">            if (segment.isEmpty()) {</span>
+<span class="nc" id="L52">                continue;</span>
+            }
+<span class="fc" id="L54">            currentCandidates = evaluateSegment(currentCandidates, segment);</span>
+<span class="pc bpc" id="L55" title="1 of 2 branches missed.">            if (currentCandidates.isEmpty()) {</span>
+<span class="nc" id="L56">                break;</span>
+            }
+        }
+
+<span class="fc" id="L60">        return currentCandidates;</span>
+    }
+
+    private List&lt;DocumentNode&gt; evaluateSegmentSelf(DocumentNode node, String segment) {
+<span class="fc" id="L64">        String nodeTypePattern = segment;</span>
+<span class="fc" id="L65">        String filterKey = null;</span>
+<span class="fc" id="L66">        String filterValue = null;</span>
+
+<span class="fc" id="L68">        int filterStart = segment.indexOf('[');</span>
+<span class="pc bpc" id="L69" title="1 of 2 branches missed.">        if (filterStart != -1) {</span>
+<span class="nc" id="L70">            nodeTypePattern = segment.substring(0, filterStart);</span>
+<span class="nc" id="L71">            int filterEnd = segment.indexOf(']', filterStart);</span>
+<span class="nc bnc" id="L72" title="All 2 branches missed.">            if (filterEnd == -1) {</span>
+<span class="nc" id="L73">                throw new IllegalArgumentException(&quot;Unclosed attribute selector in query segment: &quot; + segment);</span>
+            }
+<span class="nc" id="L75">            String filter = segment.substring(filterStart + 1, filterEnd).trim();</span>
+<span class="nc bnc" id="L76" title="All 2 branches missed.">            if (filter.startsWith(&quot;@&quot;)) {</span>
+<span class="nc" id="L77">                filter = filter.substring(1);</span>
+<span class="nc" id="L78">                int eqIdx = filter.indexOf('=');</span>
+<span class="nc bnc" id="L79" title="All 2 branches missed.">                if (eqIdx != -1) {</span>
+<span class="nc" id="L80">                    filterKey = filter.substring(0, eqIdx).trim();</span>
+<span class="nc" id="L81">                    String val = filter.substring(eqIdx + 1).trim();</span>
+<span class="nc bnc" id="L82" title="All 8 branches missed.">                    if ((val.startsWith(&quot;'&quot;) &amp;&amp; val.endsWith(&quot;'&quot;)) || (val.startsWith(&quot;\&quot;&quot;) &amp;&amp; val.endsWith(&quot;\&quot;&quot;))) {</span>
+<span class="nc" id="L83">                        val = val.substring(1, val.length() - 1);</span>
+                    }
+<span class="nc" id="L85">                    filterValue = val;</span>
+<span class="nc" id="L86">                } else {</span>
+<span class="nc" id="L87">                    filterKey = filter;</span>
+                }
+<span class="nc" id="L89">            } else {</span>
+<span class="nc" id="L90">                throw new IllegalArgumentException(&quot;Attribute filter must start with '@' inside selector&quot;);</span>
+            }
+        }
+
+<span class="fc" id="L94">        List&lt;DocumentNode&gt; match = new ArrayList&lt;&gt;();</span>
+<span class="pc bpc" id="L95" title="1 of 2 branches missed.">        if (matchesType(node, nodeTypePattern)) {</span>
+<span class="pc bpc" id="L96" title="1 of 2 branches missed.">            if (matchesFilter(node, filterKey, filterValue)) {</span>
+<span class="fc" id="L97">                match.add(node);</span>
+            }
+        }
+<span class="fc" id="L100">        return match;</span>
+    }
+
+    private List&lt;DocumentNode&gt; evaluateSegment(List&lt;DocumentNode&gt; candidates, String segment) {
+<span class="fc" id="L104">        List&lt;DocumentNode&gt; nextCandidates = new ArrayList&lt;&gt;();</span>
+        
+<span class="fc" id="L106">        String nodeTypePattern = segment;</span>
+<span class="fc" id="L107">        String filterKey = null;</span>
+<span class="fc" id="L108">        String filterValue = null;</span>
+
+<span class="fc" id="L110">        int filterStart = segment.indexOf('[');</span>
+<span class="pc bpc" id="L111" title="1 of 2 branches missed.">        if (filterStart != -1) {</span>
+<span class="fc" id="L112">            nodeTypePattern = segment.substring(0, filterStart);</span>
+<span class="fc" id="L113">            int filterEnd = segment.indexOf(']', filterStart);</span>
+<span class="pc bpc" id="L114" title="1 of 2 branches missed.">            if (filterEnd == -1) {</span>
+<span class="nc" id="L115">                throw new IllegalArgumentException(&quot;Unclosed attribute selector in query segment: &quot; + segment);</span>
+            }
+<span class="fc" id="L117">            String filter = segment.substring(filterStart + 1, filterEnd).trim();</span>
+<span class="pc bpc" id="L118" title="1 of 2 branches missed.">            if (filter.startsWith(&quot;@&quot;)) {</span>
+<span class="fc" id="L119">                filter = filter.substring(1);</span>
+<span class="fc" id="L120">                int eqIdx = filter.indexOf('=');</span>
+<span class="pc bpc" id="L121" title="1 of 2 branches missed.">                if (eqIdx != -1) {</span>
+<span class="fc" id="L122">                    filterKey = filter.substring(0, eqIdx).trim();</span>
+<span class="fc" id="L123">                    String val = filter.substring(eqIdx + 1).trim();</span>
+<span class="pc bpc" id="L124" title="6 of 8 branches missed.">                    if ((val.startsWith(&quot;'&quot;) &amp;&amp; val.endsWith(&quot;'&quot;)) || (val.startsWith(&quot;\&quot;&quot;) &amp;&amp; val.endsWith(&quot;\&quot;&quot;))) {</span>
+<span class="fc" id="L125">                        val = val.substring(1, val.length() - 1);</span>
+                    }
+<span class="fc" id="L127">                    filterValue = val;</span>
+<span class="fc" id="L128">                } else {</span>
+<span class="nc" id="L129">                    filterKey = filter;</span>
+                }
+<span class="fc" id="L131">            } else {</span>
+<span class="nc" id="L132">                throw new IllegalArgumentException(&quot;Attribute filter must start with '@' inside selector&quot;);</span>
+            }
+        }
+
+<span class="fc bfc" id="L136" title="All 2 branches covered.">        for (DocumentNode parent : candidates) {</span>
+<span class="fc bfc" id="L137" title="All 2 branches covered.">            for (DocumentNode child : parent.getChildren()) {</span>
+<span class="fc bfc" id="L138" title="All 2 branches covered.">                if (matchesType(child, nodeTypePattern)) {</span>
+<span class="pc bpc" id="L139" title="1 of 2 branches missed.">                    if (matchesFilter(child, filterKey, filterValue)) {</span>
+<span class="fc" id="L140">                        nextCandidates.add(child);</span>
+                    }
+                }
+<span class="fc" id="L143">            }</span>
+<span class="fc" id="L144">        }</span>
+
+<span class="fc" id="L146">        return nextCandidates;</span>
+    }
+
+    private boolean matchesType(DocumentNode node, String pattern) {
+<span class="fc bfc" id="L150" title="All 2 branches covered.">        if (&quot;*&quot;.equals(pattern)) {</span>
+<span class="fc" id="L151">            return true;</span>
+        }
+<span class="fc bfc" id="L153" title="All 4 branches covered.">        return node.getNodeType().equalsIgnoreCase(pattern) || node.getId().equalsIgnoreCase(pattern);</span>
+    }
+
+    private boolean matchesFilter(DocumentNode node, String filterKey, String filterValue) {
+<span class="fc bfc" id="L157" title="All 2 branches covered.">        if (filterKey == null) {</span>
+<span class="fc" id="L158">            return true;</span>
+        }
+<span class="fc" id="L160">        String nodeAttrVal = node.getAttribute(filterKey);</span>
+<span class="pc bpc" id="L161" title="1 of 2 branches missed.">        if (&quot;id&quot;.equalsIgnoreCase(filterKey)) {</span>
+<span class="nc" id="L162">            nodeAttrVal = node.getId();</span>
+        }
+
+<span class="pc bpc" id="L165" title="1 of 2 branches missed.">        if (nodeAttrVal == null) {</span>
+<span class="nc" id="L166">            return false;</span>
+        }
+<span class="pc bpc" id="L168" title="1 of 2 branches missed.">        if (filterValue == null) {</span>
+<span class="nc" id="L169">            return true;</span>
+        }
+<span class="fc" id="L171">        return nodeAttrVal.equals(filterValue);</span>
+    }
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.11.202310140853</span></div></body></html>

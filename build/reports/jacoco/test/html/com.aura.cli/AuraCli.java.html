@@ -1,0 +1,193 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>AuraCli.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">aura-document-processor</a> &gt; <a href="index.source.html" class="el_package">com.aura.cli</a> &gt; <span class="el_source">AuraCli.java</span></div><h1>AuraCli.java</h1><pre class="source lang-java linenums">package com.aura.cli;
+
+import com.aura.codec.compression.CompressionAlgorithm;
+import com.aura.codec.compression.CompressionProvider;
+import com.aura.codec.encryption.AuraKeyRing;
+import com.aura.config.XonParser;
+import com.aura.config.XonValue;
+import com.aura.internal.Preconditions;
+import com.aura.model.DocumentNode;
+import com.aura.model.query.QueryExpression;
+import com.aura.pipeline.HtmlImporter;
+import com.aura.pipeline.HtmlRenderer;
+import com.aura.pipeline.MarkdownImporter;
+import com.aura.pipeline.MarkdownRenderer;
+import java.io.ByteArrayOutputStream;
+import java.io.File;
+import java.io.FileInputStream;
+import java.io.FileOutputStream;
+import java.io.IOException;
+import java.nio.charset.StandardCharsets;
+import java.util.List;
+
+/**
+ * Command Line Interface for Aura Document Processing Engine.
+ */
+<span class="nc" id="L26">public class AuraCli {</span>
+    private static final String USAGE = 
+        &quot;Usage: AuraCli &lt;command&gt; [options]\n\n&quot; +
+        &quot;Commands:\n&quot; +
+        &quot;  compress    - Compress a file using LZ77 or RLE\n&quot; +
+        &quot;  decompress  - Decompress a compressed file\n&quot; +
+        &quot;  render-html - Render markdown/html source to HTML5 output\n&quot; +
+        &quot;  render-md   - Render markdown/html source to GFM Markdown output\n&quot; +
+        &quot;  query       - Query a document tree using path selectors\n&quot; +
+        &quot;  keyring     - Create or print binary keyring status\n\n&quot; +
+        &quot;Options:\n&quot; +
+        &quot;  -i, --input &lt;file&gt;   - Path to input file\n&quot; +
+        &quot;  -o, --output &lt;file&gt;  - Path to output file\n&quot; +
+        &quot;  -a, --algo &lt;algorithm&gt; - NONE, RLE, or LZ77 (default: LZ77)\n&quot; +
+        &quot;  -q, --query-str &lt;str&gt; - Path query expression\n&quot;;
+
+    public static int run(String[] args, ByteArrayOutputStream outStream, ByteArrayOutputStream errStream) {
+<span class="fc" id="L43">        Preconditions.checkNotNull(args, &quot;Args cannot be null&quot;);</span>
+<span class="pc bpc" id="L44" title="1 of 2 branches missed.">        if (args.length == 0) {</span>
+<span class="nc" id="L45">            write(errStream, USAGE);</span>
+<span class="nc" id="L46">            return 1;</span>
+        }
+
+<span class="fc" id="L49">        String cmd = args[0];</span>
+<span class="fc" id="L50">        String inputPath = null;</span>
+<span class="fc" id="L51">        String outputPath = null;</span>
+<span class="fc" id="L52">        String algoStr = &quot;LZ77&quot;;</span>
+<span class="fc" id="L53">        String queryStr = null;</span>
+
+<span class="fc bfc" id="L55" title="All 2 branches covered.">        for (int i = 1; i &lt; args.length; i++) {</span>
+<span class="pc bpc" id="L56" title="2 of 5 branches missed.">            switch (args[i]) {</span>
+                case &quot;-i&quot;:
+                case &quot;--input&quot;:
+<span class="pc bpc" id="L59" title="1 of 2 branches missed.">                    if (i + 1 &lt; args.length) {</span>
+<span class="fc" id="L60">                        inputPath = args[++i];</span>
+                    }
+                    break;
+                case &quot;-o&quot;:
+                case &quot;--output&quot;:
+<span class="pc bpc" id="L65" title="1 of 2 branches missed.">                    if (i + 1 &lt; args.length) {</span>
+<span class="fc" id="L66">                        outputPath = args[++i];</span>
+                    }
+                    break;
+                case &quot;-a&quot;:
+                case &quot;--algo&quot;:
+<span class="pc bpc" id="L71" title="1 of 2 branches missed.">                    if (i + 1 &lt; args.length) {</span>
+<span class="fc" id="L72">                        algoStr = args[++i];</span>
+                    }
+                    break;
+                case &quot;-q&quot;:
+                case &quot;--query-str&quot;:
+<span class="nc bnc" id="L77" title="All 2 branches missed.">                    if (i + 1 &lt; args.length) {</span>
+<span class="nc" id="L78">                        queryStr = args[++i];</span>
+                    }
+                    break;
+                default:
+<span class="nc" id="L82">                    write(errStream, &quot;Unknown option: &quot; + args[i] + &quot;\n&quot; + USAGE);</span>
+<span class="nc" id="L83">                    return 1;</span>
+            }
+        }
+
+        try {
+<span class="pc bpc" id="L88" title="2 of 7 branches missed.">            switch (cmd) {</span>
+                case &quot;compress&quot; -&gt; {
+<span class="pc bpc" id="L90" title="1 of 4 branches missed.">                    if (inputPath == null || outputPath == null) {</span>
+<span class="fc" id="L91">                        write(errStream, &quot;Error: compress command requires --input and --output\n&quot;);</span>
+<span class="fc" id="L92">                        return 1;</span>
+                    }
+<span class="fc" id="L94">                    byte[] raw = readFile(inputPath);</span>
+<span class="fc" id="L95">                    CompressionAlgorithm algo = CompressionAlgorithm.valueOf(algoStr.toUpperCase());</span>
+<span class="fc" id="L96">                    byte[] comp = CompressionProvider.compress(raw, algo);</span>
+<span class="fc" id="L97">                    writeFile(outputPath, comp);</span>
+<span class="fc" id="L98">                    write(outStream, &quot;Successfully compressed &quot; + raw.length + &quot; bytes to &quot; + comp.length + &quot; bytes using &quot; + algo + &quot;\n&quot;);</span>
+<span class="fc" id="L99">                }</span>
+                case &quot;decompress&quot; -&gt; {
+<span class="pc bpc" id="L101" title="2 of 4 branches missed.">                    if (inputPath == null || outputPath == null) {</span>
+<span class="nc" id="L102">                        write(errStream, &quot;Error: decompress command requires --input and --output\n&quot;);</span>
+<span class="nc" id="L103">                        return 1;</span>
+                    }
+<span class="fc" id="L105">                    byte[] comp = readFile(inputPath);</span>
+<span class="fc" id="L106">                    CompressionAlgorithm algo = CompressionAlgorithm.valueOf(algoStr.toUpperCase());</span>
+<span class="fc" id="L107">                    byte[] raw = CompressionProvider.decompress(comp, algo, 1024 * 1024);</span>
+<span class="fc" id="L108">                    writeFile(outputPath, raw);</span>
+<span class="fc" id="L109">                    write(outStream, &quot;Successfully decompressed &quot; + comp.length + &quot; bytes to &quot; + raw.length + &quot; bytes\n&quot;);</span>
+<span class="fc" id="L110">                }</span>
+                case &quot;render-html&quot; -&gt; {
+<span class="nc bnc" id="L112" title="All 4 branches missed.">                    if (inputPath == null || outputPath == null) {</span>
+<span class="nc" id="L113">                        write(errStream, &quot;Error: render-html command requires --input and --output\n&quot;);</span>
+<span class="nc" id="L114">                        return 1;</span>
+                    }
+<span class="nc" id="L116">                    String src = new String(readFile(inputPath), StandardCharsets.UTF_8);</span>
+<span class="nc bnc" id="L117" title="All 2 branches missed.">                    DocumentNode doc = src.trim().startsWith(&quot;&lt;&quot;) ? new HtmlImporter().importHtml(src) : new MarkdownImporter().importMarkdown(src);</span>
+<span class="nc" id="L118">                    String html = new HtmlRenderer().render(doc);</span>
+<span class="nc" id="L119">                    writeFile(outputPath, html.getBytes(StandardCharsets.UTF_8));</span>
+<span class="nc" id="L120">                    write(outStream, &quot;Successfully rendered HTML to &quot; + outputPath + &quot;\n&quot;);</span>
+<span class="nc" id="L121">                }</span>
+                case &quot;render-md&quot; -&gt; {
+<span class="nc bnc" id="L123" title="All 4 branches missed.">                    if (inputPath == null || outputPath == null) {</span>
+<span class="nc" id="L124">                        write(errStream, &quot;Error: render-md command requires --input and --output\n&quot;);</span>
+<span class="nc" id="L125">                        return 1;</span>
+                    }
+<span class="nc" id="L127">                    String src = new String(readFile(inputPath), StandardCharsets.UTF_8);</span>
+<span class="nc bnc" id="L128" title="All 2 branches missed.">                    DocumentNode doc = src.trim().startsWith(&quot;&lt;&quot;) ? new HtmlImporter().importHtml(src) : new MarkdownImporter().importMarkdown(src);</span>
+<span class="nc" id="L129">                    String mdOut = new MarkdownRenderer().render(doc);</span>
+<span class="nc" id="L130">                    writeFile(outputPath, mdOut.getBytes(StandardCharsets.UTF_8));</span>
+<span class="nc" id="L131">                    write(outStream, &quot;Successfully rendered Markdown to &quot; + outputPath + &quot;\n&quot;);</span>
+<span class="nc" id="L132">                }</span>
+                case &quot;query&quot; -&gt; {
+<span class="pc bpc" id="L134" title="3 of 4 branches missed.">                    if (inputPath == null || queryStr == null) {</span>
+<span class="fc" id="L135">                        write(errStream, &quot;Error: query command requires --input and --query-str\n&quot;);</span>
+<span class="fc" id="L136">                        return 1;</span>
+                    }
+<span class="nc" id="L138">                    String src = new String(readFile(inputPath), StandardCharsets.UTF_8);</span>
+<span class="nc bnc" id="L139" title="All 2 branches missed.">                    DocumentNode doc = src.trim().startsWith(&quot;&lt;&quot;) ? new HtmlImporter().importHtml(src) : new MarkdownImporter().importMarkdown(src);</span>
+<span class="nc" id="L140">                    QueryExpression query = new QueryExpression(queryStr);</span>
+<span class="nc" id="L141">                    List&lt;DocumentNode&gt; res = query.evaluate(doc);</span>
+<span class="nc" id="L142">                    write(outStream, &quot;Query matched &quot; + res.size() + &quot; node(s):\n&quot;);</span>
+<span class="nc bnc" id="L143" title="All 2 branches missed.">                    for (DocumentNode node : res) {</span>
+<span class="nc" id="L144">                        write(outStream, &quot;  - [&quot; + node.getNodeType() + &quot;] ID: &quot; + node.getId() + &quot;\n&quot;);</span>
+<span class="nc" id="L145">                    }</span>
+<span class="nc" id="L146">                }</span>
+                case &quot;keyring&quot; -&gt; {
+<span class="pc bpc" id="L148" title="1 of 2 branches missed.">                    if (inputPath == null) {</span>
+<span class="fc" id="L149">                        write(errStream, &quot;Error: keyring command requires --input\n&quot;);</span>
+<span class="fc" id="L150">                        return 1;</span>
+                    }
+<span class="nc" id="L152">                    byte[] bytes = readFile(inputPath);</span>
+<span class="nc" id="L153">                    AuraKeyRing ring = AuraKeyRing.parse(bytes);</span>
+<span class="nc" id="L154">                    write(outStream, &quot;Keyring contains &quot; + ring.getKeys().size() + &quot; key(s):\n&quot;);</span>
+<span class="nc bnc" id="L155" title="All 2 branches missed.">                    for (var entry : ring.getKeys().entrySet()) {</span>
+<span class="nc" id="L156">                        write(outStream, &quot;  - Name: &quot; + entry.getKey() + &quot;, Algo: &quot; + entry.getValue().getAlgorithm() + &quot;\n&quot;);</span>
+<span class="nc" id="L157">                    }</span>
+<span class="nc" id="L158">                }</span>
+                default -&gt; {
+<span class="fc" id="L160">                    write(errStream, &quot;Unknown command: &quot; + cmd + &quot;\n&quot; + USAGE);</span>
+<span class="fc" id="L161">                    return 1;</span>
+                }
+            }
+<span class="nc" id="L164">        } catch (Exception e) {</span>
+<span class="nc" id="L165">            write(errStream, &quot;Execution error: &quot; + e.getMessage() + &quot;\n&quot;);</span>
+<span class="nc" id="L166">            return 2;</span>
+<span class="fc" id="L167">        }</span>
+
+<span class="fc" id="L169">        return 0;</span>
+    }
+
+    private static void write(ByteArrayOutputStream stream, String text) {
+        try {
+<span class="fc" id="L174">            stream.write(text.getBytes(StandardCharsets.UTF_8));</span>
+<span class="pc" id="L175">        } catch (IOException ignored) {}</span>
+<span class="fc" id="L176">    }</span>
+
+    private static byte[] readFile(String path) throws IOException {
+<span class="fc" id="L179">        File file = new File(path);</span>
+<span class="fc" id="L180">        byte[] buf = new byte[(int) file.length()];</span>
+<span class="fc" id="L181">        try (FileInputStream fis = new FileInputStream(file)) {</span>
+<span class="fc" id="L182">            fis.read(buf);</span>
+        }
+<span class="fc" id="L184">        return buf;</span>
+    }
+
+    private static void writeFile(String path, byte[] data) throws IOException {
+<span class="fc" id="L188">        try (FileOutputStream fos = new FileOutputStream(path)) {</span>
+<span class="fc" id="L189">            fos.write(data);</span>
+        }
+<span class="fc" id="L191">    }</span>
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.11.202310140853</span></div></body></html>

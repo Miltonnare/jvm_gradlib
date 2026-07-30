@@ -1,0 +1,63 @@
+plugins {
+    id 'java'
+    id 'jacoco'
+    id 'checkstyle'
+    id 'pmd'
+}
+
+group = 'com.aura'
+version = '1.0.0-SNAPSHOT'
+
+java {
+    toolchain {
+        languageVersion = JavaLanguageVersion.of(17)
+    }
+}
+
+repositories {
+    mavenCentral()
+}
+
+dependencies {
+    // JUnit 5 for unit testing
+    testImplementation platform('org.junit:junit-bom:5.10.1')
+    testImplementation 'org.junit.jupiter:junit-jupiter'
+    
+    // Spotbugs annotation support (compileOnly to keep it lightweight)
+    compileOnly 'com.github.spotbugs:spotbugs-annotations:4.8.3'
+}
+
+test {
+    useJUnitPlatform()
+    finalizedBy jacocoTestReport
+}
+
+jacoco {
+    toolVersion = "0.8.11"
+}
+
+jacocoTestReport {
+    dependsOn test
+    reports {
+        xml.required = true
+        html.required = true
+    }
+}
+
+checkstyle {
+    toolVersion = '10.12.5'
+    ignoreFailures = false
+    maxWarnings = 0
+}
+
+pmd {
+    consoleOutput = true
+    toolVersion = "6.55.0"
+    rulesMinimumPriority = 5
+    ruleSets = ["category/java/errorprone.xml", "category/java/bestpractices.xml", "category/java/codestyle.xml"]
+}
+
+tasks.withType(JavaCompile).configureEach {
+    options.encoding = 'UTF-8'
+    options.compilerArgs.addAll(['-Xlint:all', '-Werror'])
+}

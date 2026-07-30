@@ -1,0 +1,176 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>MetadataValue.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">aura-document-processor</a> &gt; <a href="index.source.html" class="el_package">com.aura.metadata</a> &gt; <span class="el_source">MetadataValue.java</span></div><h1>MetadataValue.java</h1><pre class="source lang-java linenums">package com.aura.metadata;
+
+import com.aura.internal.Preconditions;
+import java.util.Collections;
+import java.util.List;
+import java.util.Map;
+
+/**
+ * Holder for a typed metadata value.
+ */
+<span class="fc" id="L11">public abstract class MetadataValue {</span>
+
+    public abstract MetadataType getType();
+
+    public int asInt() {
+<span class="nc" id="L16">        throw new UnsupportedOperationException(&quot;Not an integer&quot;);</span>
+    }
+
+    public long asLong() {
+<span class="nc" id="L20">        throw new UnsupportedOperationException(&quot;Not a long&quot;);</span>
+    }
+
+    public double asDouble() {
+<span class="nc" id="L24">        throw new UnsupportedOperationException(&quot;Not a double&quot;);</span>
+    }
+
+    public boolean asBoolean() {
+<span class="nc" id="L28">        throw new UnsupportedOperationException(&quot;Not a boolean&quot;);</span>
+    }
+
+    public String asString() {
+<span class="nc" id="L32">        throw new UnsupportedOperationException(&quot;Not a string&quot;);</span>
+    }
+
+    public byte[] asBinary() {
+<span class="nc" id="L36">        throw new UnsupportedOperationException(&quot;Not binary data&quot;);</span>
+    }
+
+    public Map&lt;String, MetadataValue&gt; asMap() {
+<span class="nc" id="L40">        throw new UnsupportedOperationException(&quot;Not a map&quot;);</span>
+    }
+
+    public List&lt;MetadataValue&gt; asArray() {
+<span class="nc" id="L44">        throw new UnsupportedOperationException(&quot;Not an array&quot;);</span>
+    }
+
+    // Static constructors
+
+    public static MetadataValue of(int value) {
+<span class="fc" id="L50">        return new IntVal(value);</span>
+    }
+
+    public static MetadataValue of(long value) {
+<span class="nc" id="L54">        return new LongVal(value);</span>
+    }
+
+    public static MetadataValue of(double value) {
+<span class="fc" id="L58">        return new DoubleVal(value);</span>
+    }
+
+    public static MetadataValue of(boolean value) {
+<span class="fc" id="L62">        return new BoolVal(value);</span>
+    }
+
+    public static MetadataValue of(String value) {
+<span class="fc" id="L66">        return new StringVal(value);</span>
+    }
+
+    public static MetadataValue of(byte[] value) {
+<span class="fc" id="L70">        return new BinaryVal(value);</span>
+    }
+
+    public static MetadataValue of(Map&lt;String, MetadataValue&gt; value) {
+<span class="fc" id="L74">        return new MapVal(value);</span>
+    }
+
+    public static MetadataValue of(List&lt;MetadataValue&gt; value) {
+<span class="fc" id="L78">        return new ArrayVal(value);</span>
+    }
+
+    // Concrete Subclasses
+
+    private static final class IntVal extends MetadataValue {
+        private final int val;
+
+<span class="fc" id="L86">        private IntVal(int val) { this.val = val; }</span>
+
+<span class="fc" id="L88">        @Override public MetadataType getType() { return MetadataType.INTEGER; }</span>
+<span class="fc" id="L89">        @Override public int asInt() { return val; }</span>
+<span class="nc" id="L90">        @Override public long asLong() { return val; }</span>
+<span class="nc" id="L91">        @Override public double asDouble() { return val; }</span>
+<span class="nc" id="L92">        @Override public String toString() { return String.valueOf(val); }</span>
+    }
+
+    private static final class LongVal extends MetadataValue {
+        private final long val;
+
+<span class="nc" id="L98">        private LongVal(long val) { this.val = val; }</span>
+
+<span class="nc" id="L100">        @Override public MetadataType getType() { return MetadataType.LONG; }</span>
+<span class="nc" id="L101">        @Override public long asLong() { return val; }</span>
+<span class="nc" id="L102">        @Override public double asDouble() { return val; }</span>
+<span class="nc" id="L103">        @Override public String toString() { return String.valueOf(val); }</span>
+    }
+
+    private static final class DoubleVal extends MetadataValue {
+        private final double val;
+
+<span class="fc" id="L109">        private DoubleVal(double val) { this.val = val; }</span>
+
+<span class="fc" id="L111">        @Override public MetadataType getType() { return MetadataType.DOUBLE; }</span>
+<span class="fc" id="L112">        @Override public double asDouble() { return val; }</span>
+<span class="nc" id="L113">        @Override public String toString() { return String.valueOf(val); }</span>
+    }
+
+    private static final class BoolVal extends MetadataValue {
+        private final boolean val;
+
+<span class="fc" id="L119">        private BoolVal(boolean val) { this.val = val; }</span>
+
+<span class="fc" id="L121">        @Override public MetadataType getType() { return MetadataType.BOOLEAN; }</span>
+<span class="fc" id="L122">        @Override public boolean asBoolean() { return val; }</span>
+<span class="nc" id="L123">        @Override public String toString() { return String.valueOf(val); }</span>
+    }
+
+    private static final class StringVal extends MetadataValue {
+        private final String val;
+
+<span class="fc" id="L129">        private StringVal(String val) {</span>
+<span class="fc" id="L130">            this.val = Preconditions.checkNotNull(val, &quot;String value cannot be null&quot;);</span>
+<span class="fc" id="L131">        }</span>
+
+<span class="fc" id="L133">        @Override public MetadataType getType() { return MetadataType.STRING; }</span>
+<span class="fc" id="L134">        @Override public String asString() { return val; }</span>
+<span class="nc" id="L135">        @Override public String toString() { return val; }</span>
+    }
+
+    private static final class BinaryVal extends MetadataValue {
+        private final byte[] val;
+
+<span class="fc" id="L141">        private BinaryVal(byte[] val) {</span>
+<span class="fc" id="L142">            this.val = Preconditions.checkNotNull(val, &quot;Binary value cannot be null&quot;).clone();</span>
+<span class="fc" id="L143">        }</span>
+
+<span class="fc" id="L145">        @Override public MetadataType getType() { return MetadataType.BINARY; }</span>
+<span class="fc" id="L146">        @Override public byte[] asBinary() { return val.clone(); }</span>
+<span class="nc" id="L147">        @Override public String toString() { return &quot;binary[&quot; + val.length + &quot; bytes]&quot;; }</span>
+    }
+
+    private static final class MapVal extends MetadataValue {
+        private final Map&lt;String, MetadataValue&gt; val;
+
+<span class="fc" id="L153">        private MapVal(Map&lt;String, MetadataValue&gt; val) {</span>
+<span class="fc" id="L154">            Preconditions.checkNotNull(val, &quot;Map value cannot be null&quot;);</span>
+<span class="fc" id="L155">            this.val = Collections.unmodifiableMap(val);</span>
+<span class="fc" id="L156">        }</span>
+
+<span class="fc" id="L158">        @Override public MetadataType getType() { return MetadataType.MAP; }</span>
+<span class="fc" id="L159">        @Override public Map&lt;String, MetadataValue&gt; asMap() { return val; }</span>
+<span class="nc" id="L160">        @Override public String toString() { return val.toString(); }</span>
+    }
+
+    private static final class ArrayVal extends MetadataValue {
+        private final List&lt;MetadataValue&gt; val;
+
+<span class="fc" id="L166">        private ArrayVal(List&lt;MetadataValue&gt; val) {</span>
+<span class="fc" id="L167">            Preconditions.checkNotNull(val, &quot;Array value cannot be null&quot;);</span>
+<span class="fc" id="L168">            this.val = List.copyOf(val);</span>
+<span class="fc" id="L169">        }</span>
+
+<span class="fc" id="L171">        @Override public MetadataType getType() { return MetadataType.ARRAY; }</span>
+<span class="fc" id="L172">        @Override public List&lt;MetadataValue&gt; asArray() { return val; }</span>
+<span class="nc" id="L173">        @Override public String toString() { return val.toString(); }</span>
+    }
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.11.202310140853</span></div></body></html>

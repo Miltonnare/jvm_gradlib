@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testsuite name="com.aura.cli.CliTest" tests="2" skipped="0" failures="0" errors="0" timestamp="2026-07-30T12:47:42" hostname="MILTONNARE-1" time="0.085">
+  <properties/>
+  <testcase name="testCliOptionErrors()" classname="com.aura.cli.CliTest" time="0.015"/>
+  <testcase name="testCliCompressAndDecompress()" classname="com.aura.cli.CliTest" time="0.067"/>
+  <system-out><![CDATA[]]></system-out>
+  <system-err><![CDATA[]]></system-err>
+</testsuite>

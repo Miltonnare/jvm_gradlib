@@ -1,0 +1,104 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>BinaryMetadataWriter.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">aura-document-processor</a> &gt; <a href="index.source.html" class="el_package">com.aura.metadata</a> &gt; <span class="el_source">BinaryMetadataWriter.java</span></div><h1>BinaryMetadataWriter.java</h1><pre class="source lang-java linenums">package com.aura.metadata;
+
+import com.aura.internal.ByteUtils;
+import com.aura.internal.Preconditions;
+import java.io.ByteArrayOutputStream;
+import java.io.IOException;
+import java.io.OutputStream;
+import java.nio.charset.StandardCharsets;
+import java.util.List;
+import java.util.Map;
+
+/**
+ * Serializes maps of MetadataValue entries to Binary Structured Metadata (BSM).
+ */
+public final class BinaryMetadataWriter {
+
+    private BinaryMetadataWriter() {
+        // Prevent instantiation
+    }
+
+    public static byte[] write(Map&lt;String, MetadataValue&gt; metadata) throws IOException {
+<span class="fc" id="L22">        Preconditions.checkNotNull(metadata, &quot;Metadata map cannot be null&quot;);</span>
+<span class="fc" id="L23">        ByteArrayOutputStream out = new ByteArrayOutputStream();</span>
+<span class="fc" id="L24">        writeMap(out, metadata);</span>
+<span class="fc" id="L25">        return out.toByteArray();</span>
+    }
+
+    private static void writeMap(OutputStream out, Map&lt;String, MetadataValue&gt; map) throws IOException {
+<span class="fc bfc" id="L29" title="All 2 branches covered.">        for (Map.Entry&lt;String, MetadataValue&gt; entry : map.entrySet()) {</span>
+<span class="fc" id="L30">            String key = entry.getKey();</span>
+<span class="fc" id="L31">            MetadataValue value = entry.getValue();</span>
+
+<span class="fc" id="L33">            byte[] keyBytes = key.getBytes(StandardCharsets.UTF_8);</span>
+<span class="pc bpc" id="L34" title="1 of 2 branches missed.">            Preconditions.checkArgument(keyBytes.length &lt;= 0xFFFF, &quot;Key length exceeds maximum of 65535 bytes&quot;);</span>
+
+            // 1. Tag (Type)
+<span class="fc" id="L37">            out.write(value.getType().getCode());</span>
+
+            // 2. Key Length (2 bytes)
+<span class="fc" id="L40">            byte[] keyLenBuf = new byte[2];</span>
+<span class="fc" id="L41">            ByteUtils.writeShortBe(keyLenBuf, 0, (short) keyBytes.length);</span>
+<span class="fc" id="L42">            out.write(keyLenBuf);</span>
+
+            // 3. Key bytes
+<span class="fc" id="L45">            out.write(keyBytes);</span>
+
+            // Serialize value into buffer to know the length first
+<span class="fc" id="L48">            byte[] valBytes = serializeValue(value);</span>
+
+            // 4. Value Length (4 bytes)
+<span class="fc" id="L51">            byte[] valLenBuf = new byte[4];</span>
+<span class="fc" id="L52">            ByteUtils.writeIntBe(valLenBuf, 0, valBytes.length);</span>
+<span class="fc" id="L53">            out.write(valLenBuf);</span>
+
+            // 5. Value bytes
+<span class="fc" id="L56">            out.write(valBytes);</span>
+<span class="fc" id="L57">        }</span>
+<span class="fc" id="L58">    }</span>
+
+    private static byte[] serializeValue(MetadataValue value) throws IOException {
+<span class="fc" id="L61">        ByteArrayOutputStream buffer = new ByteArrayOutputStream();</span>
+<span class="pc bpc" id="L62" title="2 of 9 branches missed.">        switch (value.getType()) {</span>
+            case INTEGER -&gt; {
+<span class="fc" id="L64">                byte[] b = new byte[4];</span>
+<span class="fc" id="L65">                ByteUtils.writeIntBe(b, 0, value.asInt());</span>
+<span class="fc" id="L66">                buffer.write(b);</span>
+<span class="fc" id="L67">            }</span>
+            case LONG -&gt; {
+<span class="nc" id="L69">                byte[] b = new byte[8];</span>
+<span class="nc" id="L70">                ByteUtils.writeLongBe(b, 0, value.asLong());</span>
+<span class="nc" id="L71">                buffer.write(b);</span>
+<span class="nc" id="L72">            }</span>
+            case DOUBLE -&gt; {
+<span class="fc" id="L74">                byte[] b = new byte[8];</span>
+<span class="fc" id="L75">                long bits = Double.doubleToLongBits(value.asDouble());</span>
+<span class="fc" id="L76">                ByteUtils.writeLongBe(b, 0, bits);</span>
+<span class="fc" id="L77">                buffer.write(b);</span>
+<span class="fc" id="L78">            }</span>
+<span class="pc bpc" id="L79" title="1 of 2 branches missed.">            case BOOLEAN -&gt; buffer.write(value.asBoolean() ? 1 : 0);</span>
+            case STRING -&gt; {
+<span class="fc" id="L81">                byte[] sBytes = value.asString().getBytes(StandardCharsets.UTF_8);</span>
+<span class="fc" id="L82">                buffer.write(sBytes);</span>
+<span class="fc" id="L83">            }</span>
+<span class="fc" id="L84">            case BINARY -&gt; buffer.write(value.asBinary());</span>
+<span class="fc" id="L85">            case MAP -&gt; writeMap(buffer, value.asMap());</span>
+            case ARRAY -&gt; {
+<span class="fc" id="L87">                List&lt;MetadataValue&gt; list = value.asArray();</span>
+<span class="fc" id="L88">                byte[] countBuf = new byte[4];</span>
+<span class="fc" id="L89">                ByteUtils.writeIntBe(countBuf, 0, list.size());</span>
+<span class="fc" id="L90">                buffer.write(countBuf);</span>
+<span class="fc bfc" id="L91" title="All 2 branches covered.">                for (MetadataValue val : list) {</span>
+<span class="fc" id="L92">                    buffer.write(val.getType().getCode());</span>
+<span class="fc" id="L93">                    byte[] elementBytes = serializeValue(val);</span>
+<span class="fc" id="L94">                    byte[] elLenBuf = new byte[4];</span>
+<span class="fc" id="L95">                    ByteUtils.writeIntBe(elLenBuf, 0, elementBytes.length);</span>
+<span class="fc" id="L96">                    buffer.write(elLenBuf);</span>
+<span class="fc" id="L97">                    buffer.write(elementBytes);</span>
+<span class="fc" id="L98">                }</span>
+            }
+        }
+<span class="fc" id="L101">        return buffer.toByteArray();</span>
+    }
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.11.202310140853</span></div></body></html>

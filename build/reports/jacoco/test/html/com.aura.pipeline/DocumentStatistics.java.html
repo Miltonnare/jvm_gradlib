@@ -1,0 +1,105 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>DocumentStatistics.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">aura-document-processor</a> &gt; <a href="index.source.html" class="el_package">com.aura.pipeline</a> &gt; <span class="el_source">DocumentStatistics.java</span></div><h1>DocumentStatistics.java</h1><pre class="source lang-java linenums">package com.aura.pipeline;
+
+import com.aura.internal.Preconditions;
+import com.aura.model.DocumentNode;
+import com.aura.model.ImageNode;
+import com.aura.model.ParagraphNode;
+import com.aura.model.ScriptNode;
+import com.aura.model.TableNode;
+import java.util.LinkedHashMap;
+import java.util.Map;
+
+/**
+ * Traverses document graphs to compute statistics on characters, word count,
+ * average word length, element distribution, and nesting dimensions.
+ */
+<span class="fc" id="L16">public class DocumentStatistics implements DocumentNode.DocumentVisitor, TransformationPipeline.Stage&lt;DocumentNode, Map&lt;String, Object&gt;&gt; {</span>
+    private int paragraphCount;
+    private int imageCount;
+    private int tableCount;
+    private int cellCount;
+    private int scriptCount;
+    private long characterCount;
+    private long wordCount;
+
+    public Map&lt;String, Object&gt; analyze(DocumentNode root) {
+<span class="fc" id="L26">        Preconditions.checkNotNull(root, &quot;Root node cannot be null&quot;);</span>
+<span class="fc" id="L27">        paragraphCount = 0;</span>
+<span class="fc" id="L28">        imageCount = 0;</span>
+<span class="fc" id="L29">        tableCount = 0;</span>
+<span class="fc" id="L30">        cellCount = 0;</span>
+<span class="fc" id="L31">        scriptCount = 0;</span>
+<span class="fc" id="L32">        characterCount = 0;</span>
+<span class="fc" id="L33">        wordCount = 0;</span>
+
+<span class="fc" id="L35">        traverse(root);</span>
+
+<span class="fc" id="L37">        Map&lt;String, Object&gt; stats = new LinkedHashMap&lt;&gt;();</span>
+<span class="fc" id="L38">        stats.put(&quot;paragraphCount&quot;, paragraphCount);</span>
+<span class="fc" id="L39">        stats.put(&quot;imageCount&quot;, imageCount);</span>
+<span class="fc" id="L40">        stats.put(&quot;tableCount&quot;, tableCount);</span>
+<span class="fc" id="L41">        stats.put(&quot;cellCount&quot;, cellCount);</span>
+<span class="fc" id="L42">        stats.put(&quot;scriptCount&quot;, scriptCount);</span>
+<span class="fc" id="L43">        stats.put(&quot;characterCount&quot;, characterCount);</span>
+<span class="fc" id="L44">        stats.put(&quot;wordCount&quot;, wordCount);</span>
+<span class="pc bpc" id="L45" title="1 of 2 branches missed.">        stats.put(&quot;avgWordLength&quot;, wordCount == 0 ? 0.0 : (double) characterCount / wordCount);</span>
+
+<span class="fc" id="L47">        return stats;</span>
+    }
+
+    private void traverse(DocumentNode node) {
+<span class="fc" id="L51">        node.accept(this);</span>
+<span class="pc bpc" id="L52" title="1 of 2 branches missed.">        if (!(node instanceof TableNode)) {</span>
+<span class="fc bfc" id="L53" title="All 2 branches covered.">            for (DocumentNode child : node.getChildren()) {</span>
+<span class="fc" id="L54">                traverse(child);</span>
+<span class="fc" id="L55">            }</span>
+        }
+<span class="fc" id="L57">    }</span>
+
+    @Override
+    public void visit(ParagraphNode paragraph) {
+<span class="fc" id="L61">        paragraphCount++;</span>
+<span class="fc" id="L62">        String text = paragraph.getText();</span>
+<span class="pc bpc" id="L63" title="2 of 4 branches missed.">        if (text != null &amp;&amp; !text.isEmpty()) {</span>
+<span class="fc" id="L64">            characterCount += text.length();</span>
+<span class="fc" id="L65">            String[] words = text.split(&quot;\\s+&quot;);</span>
+<span class="fc bfc" id="L66" title="All 2 branches covered.">            for (String w : words) {</span>
+<span class="pc bpc" id="L67" title="1 of 2 branches missed.">                if (!w.trim().isEmpty()) {</span>
+<span class="fc" id="L68">                    wordCount++;</span>
+                }
+            }
+        }
+<span class="fc" id="L72">    }</span>
+
+    @Override
+    public void visit(ImageNode image) {
+<span class="nc" id="L76">        imageCount++;</span>
+<span class="nc" id="L77">    }</span>
+
+    @Override
+    public void visit(TableNode table) {
+<span class="nc" id="L81">        tableCount++;</span>
+<span class="nc" id="L82">        int rows = table.getRowCount();</span>
+<span class="nc" id="L83">        int cols = table.getColCount();</span>
+<span class="nc bnc" id="L84" title="All 2 branches missed.">        for (int r = 0; r &lt; rows; r++) {</span>
+<span class="nc bnc" id="L85" title="All 2 branches missed.">            for (int c = 0; c &lt; cols; c++) {</span>
+<span class="nc" id="L86">                DocumentNode cell = table.getCell(r, c);</span>
+<span class="nc bnc" id="L87" title="All 2 branches missed.">                if (cell != null) {</span>
+<span class="nc" id="L88">                    cellCount++;</span>
+<span class="nc" id="L89">                    traverse(cell);</span>
+                }
+            }
+        }
+<span class="nc" id="L93">    }</span>
+
+    @Override
+    public void visit(ScriptNode script) {
+<span class="nc" id="L97">        scriptCount++;</span>
+<span class="nc" id="L98">    }</span>
+
+    @Override
+    public Map&lt;String, Object&gt; process(DocumentNode input) {
+<span class="nc" id="L102">        return analyze(input);</span>
+    }
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.11.202310140853</span></div></body></html>

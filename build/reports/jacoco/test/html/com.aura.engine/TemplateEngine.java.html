@@ -1,0 +1,125 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>TemplateEngine.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">aura-document-processor</a> &gt; <a href="index.source.html" class="el_package">com.aura.engine</a> &gt; <span class="el_source">TemplateEngine.java</span></div><h1>TemplateEngine.java</h1><pre class="source lang-java linenums">package com.aura.engine;
+
+import com.aura.internal.Preconditions;
+import java.util.List;
+import java.util.Map;
+
+/**
+ * Textual template engine that processes variables, conditionals, and repeating lists.
+ */
+<span class="fc" id="L10">public class TemplateEngine {</span>
+    private static final int MAX_NESTING = 8;
+
+    /**
+     * Renders template text replacing placeholders using key-value values.
+     */
+    public String render(String template, Map&lt;String, Object&gt; context) {
+<span class="fc" id="L17">        Preconditions.checkNotNull(template, &quot;Template string cannot be null&quot;);</span>
+<span class="fc" id="L18">        Preconditions.checkNotNull(context, &quot;Context map cannot be null&quot;);</span>
+<span class="fc" id="L19">        return renderBlock(template, context, 0);</span>
+    }
+
+    private String renderBlock(String block, Map&lt;String, Object&gt; context, int depth) {
+<span class="pc bpc" id="L23" title="1 of 2 branches missed.">        if (depth &gt; MAX_NESTING) {</span>
+<span class="nc" id="L24">            throw new IllegalStateException(&quot;Exceeded maximum template nesting depth of &quot; + MAX_NESTING);</span>
+        }
+
+<span class="fc" id="L27">        StringBuilder sb = new StringBuilder();</span>
+<span class="fc" id="L28">        int cursor = 0;</span>
+<span class="fc" id="L29">        int len = block.length();</span>
+
+<span class="fc bfc" id="L31" title="All 2 branches covered.">        while (cursor &lt; len) {</span>
+<span class="fc" id="L32">            int startIdx = block.indexOf(&quot;{{&quot;, cursor);</span>
+<span class="fc bfc" id="L33" title="All 2 branches covered.">            if (startIdx == -1) {</span>
+<span class="fc" id="L34">                sb.append(block.substring(cursor));</span>
+<span class="fc" id="L35">                break;</span>
+            }
+
+<span class="fc" id="L38">            sb.append(block, cursor, startIdx);</span>
+<span class="fc" id="L39">            int endIdx = block.indexOf(&quot;}}&quot;, startIdx);</span>
+<span class="pc bpc" id="L40" title="1 of 2 branches missed.">            if (endIdx == -1) {</span>
+                // Malformed tag, treat as literal text or throw
+<span class="nc" id="L42">                throw new IllegalArgumentException(&quot;Unclosed template placeholder starting at position &quot; + startIdx);</span>
+            }
+
+<span class="fc" id="L45">            String tagContent = block.substring(startIdx + 2, endIdx).trim();</span>
+<span class="fc" id="L46">            cursor = endIdx + 2;</span>
+
+<span class="fc bfc" id="L48" title="All 2 branches covered.">            if (tagContent.startsWith(&quot;if &quot;)) {</span>
+<span class="fc" id="L49">                String varName = tagContent.substring(3).trim();</span>
+<span class="fc" id="L50">                int matchingEnd = findMatchingEndTag(block, cursor, &quot;if&quot;, &quot;endif&quot;);</span>
+
+<span class="fc" id="L52">                String innerBlock = block.substring(cursor, matchingEnd);</span>
+<span class="fc" id="L53">                cursor = matchingEnd + 9; // Skip &quot;{{endif}}&quot;</span>
+
+<span class="fc" id="L55">                Object cond = context.get(varName);</span>
+<span class="pc bpc" id="L56" title="3 of 4 branches missed.">                boolean show = cond instanceof Boolean b ? b : cond != null;</span>
+<span class="pc bpc" id="L57" title="1 of 2 branches missed.">                if (show) {</span>
+<span class="fc" id="L58">                    sb.append(renderBlock(innerBlock, context, depth + 1));</span>
+                }
+
+<span class="fc bfc" id="L61" title="All 2 branches covered.">            } else if (tagContent.startsWith(&quot;each &quot;)) {</span>
+<span class="fc" id="L62">                String listName = tagContent.substring(5).trim();</span>
+<span class="fc" id="L63">                int matchingEnd = findMatchingEndTag(block, cursor, &quot;each&quot;, &quot;endeach&quot;);</span>
+
+<span class="fc" id="L65">                String innerBlock = block.substring(cursor, matchingEnd);</span>
+<span class="fc" id="L66">                cursor = matchingEnd + 11; // Skip &quot;{{endeach}}&quot;</span>
+
+<span class="fc" id="L68">                Object listObj = context.get(listName);</span>
+<span class="pc bpc" id="L69" title="1 of 2 branches missed.">                if (listObj instanceof List&lt;?&gt; list) {</span>
+<span class="fc bfc" id="L70" title="All 2 branches covered.">                    for (Object item : list) {</span>
+<span class="pc bpc" id="L71" title="1 of 2 branches missed.">                        if (item instanceof Map) {</span>
+                            @SuppressWarnings(&quot;unchecked&quot;)
+<span class="fc" id="L73">                            Map&lt;String, Object&gt; subCtx = (Map&lt;String, Object&gt;) item;</span>
+<span class="fc" id="L74">                            sb.append(renderBlock(innerBlock, subCtx, depth + 1));</span>
+<span class="fc" id="L75">                        } else {</span>
+                            // Flat list item
+<span class="nc" id="L77">                            sb.append(item.toString());</span>
+                        }
+<span class="fc" id="L79">                    }</span>
+                }
+
+<span class="pc bpc" id="L82" title="2 of 4 branches missed.">            } else if (&quot;endif&quot;.equals(tagContent) || &quot;endeach&quot;.equals(tagContent)) {</span>
+<span class="nc" id="L83">                throw new IllegalArgumentException(&quot;Orphan end tag: &quot; + tagContent);</span>
+            } else {
+                // Standard variable replacement
+<span class="fc" id="L86">                Object value = context.get(tagContent);</span>
+<span class="pc bpc" id="L87" title="1 of 2 branches missed.">                if (value != null) {</span>
+<span class="fc" id="L88">                    sb.append(value.toString());</span>
+                }
+            }
+<span class="fc" id="L91">        }</span>
+<span class="fc" id="L92">        return sb.toString();</span>
+    }
+
+    private int findMatchingEndTag(String block, int startCursor, String type, String endTag) {
+<span class="fc" id="L96">        int depth = 1;</span>
+<span class="fc" id="L97">        int cursor = startCursor;</span>
+<span class="fc" id="L98">        int len = block.length();</span>
+
+<span class="pc bpc" id="L100" title="1 of 2 branches missed.">        while (cursor &lt; len) {</span>
+<span class="fc" id="L101">            int startIdx = block.indexOf(&quot;{{&quot;, cursor);</span>
+<span class="pc bpc" id="L102" title="1 of 2 branches missed.">            if (startIdx == -1) {</span>
+<span class="nc" id="L103">                break;</span>
+            }
+
+<span class="fc" id="L106">            int endIdx = block.indexOf(&quot;}}&quot;, startIdx);</span>
+<span class="pc bpc" id="L107" title="1 of 2 branches missed.">            if (endIdx == -1) {</span>
+<span class="nc" id="L108">                break;</span>
+            }
+
+<span class="fc" id="L111">            String tag = block.substring(startIdx + 2, endIdx).trim();</span>
+<span class="pc bpc" id="L112" title="1 of 2 branches missed.">            if (tag.startsWith(type + &quot; &quot;)) {</span>
+<span class="nc" id="L113">                depth++;</span>
+<span class="fc bfc" id="L114" title="All 2 branches covered.">            } else if (tag.equals(endTag)) {</span>
+<span class="fc" id="L115">                depth--;</span>
+<span class="pc bpc" id="L116" title="1 of 2 branches missed.">                if (depth == 0) {</span>
+<span class="fc" id="L117">                    return startIdx;</span>
+                }
+            }
+<span class="fc" id="L120">            cursor = endIdx + 2;</span>
+<span class="fc" id="L121">        }</span>
+<span class="nc" id="L122">        throw new IllegalArgumentException(&quot;Missing matching close tag: &quot; + endTag);</span>
+    }
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.11.202310140853</span></div></body></html>

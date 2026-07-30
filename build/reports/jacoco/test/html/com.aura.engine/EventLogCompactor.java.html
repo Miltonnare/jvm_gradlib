@@ -1,0 +1,165 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>EventLogCompactor.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">aura-document-processor</a> &gt; <a href="index.source.html" class="el_package">com.aura.engine</a> &gt; <span class="el_source">EventLogCompactor.java</span></div><h1>EventLogCompactor.java</h1><pre class="source lang-java linenums">package com.aura.engine;
+
+import com.aura.internal.ByteUtils;
+import com.aura.internal.Preconditions;
+import java.io.ByteArrayInputStream;
+import java.io.ByteArrayOutputStream;
+import java.io.IOException;
+import java.io.InputStream;
+import java.nio.charset.StandardCharsets;
+import java.util.LinkedHashMap;
+import java.util.Map;
+
+/**
+ * Compacts binary mutation logs by merging redundant key mutations per entity.
+ * Only outputs the latest state mutation for each key.
+ */
+<span class="fc" id="L17">public class EventLogCompactor {</span>
+<span class="fc" id="L18">    private static final byte[] LOG_MAGIC = {(byte) 'E', (byte) 'V', (byte) 'L', (byte) 'G'};</span>
+
+    public byte[] compact(byte[] logData) throws IOException {
+<span class="fc" id="L21">        Preconditions.checkNotNull(logData, &quot;Log data cannot be null&quot;);</span>
+<span class="pc bpc" id="L22" title="1 of 2 branches missed.">        if (logData.length &lt; 6) {</span>
+<span class="nc" id="L23">            return new byte[0];</span>
+        }
+
+        // 1. Verify Magic
+<span class="fc bfc" id="L27" title="All 2 branches covered.">        for (int i = 0; i &lt; 4; i++) {</span>
+<span class="pc bpc" id="L28" title="1 of 2 branches missed.">            if (logData[i] != LOG_MAGIC[i]) {</span>
+<span class="nc" id="L29">                throw new IllegalArgumentException(&quot;Invalid Event Log magic signature&quot;);</span>
+            }
+        }
+
+<span class="fc" id="L33">        int version = ByteUtils.readShortBe(logData, 4) &amp; 0xFFFF;</span>
+<span class="pc bpc" id="L34" title="1 of 2 branches missed.">        if (version != 1) {</span>
+<span class="nc" id="L35">            throw new IllegalArgumentException(&quot;Unsupported Event Log version: &quot; + version);</span>
+        }
+
+<span class="fc" id="L38">        ByteArrayInputStream bais = new ByteArrayInputStream(logData, 6, logData.length - 6);</span>
+        
+        // Entity name -&gt; Map of Key -&gt; Mutation
+<span class="fc" id="L41">        Map&lt;String, Map&lt;String, CompactedMutation&gt;&gt; entityMutations = new LinkedHashMap&lt;&gt;();</span>
+
+<span class="fc bfc" id="L43" title="All 2 branches covered.">        while (bais.available() &gt; 0) {</span>
+<span class="fc" id="L44">            byte[] lenBuf = new byte[2];</span>
+<span class="pc bpc" id="L45" title="1 of 2 branches missed.">            if (readFully(bais, lenBuf) &lt; 2) break; // End of log stream</span>
+<span class="fc" id="L46">            int nameLen = ByteUtils.readShortBe(lenBuf, 0) &amp; 0xFFFF;</span>
+
+<span class="fc" id="L48">            byte[] nameBytes = new byte[nameLen];</span>
+<span class="pc bpc" id="L49" title="1 of 2 branches missed.">            if (readFully(bais, nameBytes) &lt; nameLen) {</span>
+<span class="nc" id="L50">                throw new IllegalArgumentException(&quot;Truncated entity name in log&quot;);</span>
+            }
+<span class="fc" id="L52">            String entityName = new String(nameBytes, StandardCharsets.UTF_8);</span>
+
+<span class="fc" id="L54">            byte[] countBuf = new byte[2];</span>
+<span class="pc bpc" id="L55" title="1 of 2 branches missed.">            if (readFully(bais, countBuf) &lt; 2) {</span>
+<span class="nc" id="L56">                throw new IllegalArgumentException(&quot;Truncated mutation count in log&quot;);</span>
+            }
+<span class="fc" id="L58">            int mutCount = ByteUtils.readShortBe(countBuf, 0) &amp; 0xFFFF;</span>
+
+<span class="fc" id="L60">            Map&lt;String, CompactedMutation&gt; keyMap = entityMutations.computeIfAbsent(entityName, k -&gt; new LinkedHashMap&lt;&gt;());</span>
+
+<span class="fc bfc" id="L62" title="All 2 branches covered.">            for (int i = 0; i &lt; mutCount; i++) {</span>
+<span class="fc" id="L63">                byte[] keyLenBuf = new byte[2];</span>
+<span class="pc bpc" id="L64" title="1 of 2 branches missed.">                if (readFully(bais, keyLenBuf) &lt; 2) {</span>
+<span class="nc" id="L65">                    throw new IllegalArgumentException(&quot;Truncated key length in mutation&quot;);</span>
+                }
+<span class="fc" id="L67">                int keyLen = ByteUtils.readShortBe(keyLenBuf, 0) &amp; 0xFFFF;</span>
+
+<span class="fc" id="L69">                byte[] keyBytes = new byte[keyLen];</span>
+<span class="pc bpc" id="L70" title="1 of 2 branches missed.">                if (readFully(bais, keyBytes) &lt; keyLen) {</span>
+<span class="nc" id="L71">                    throw new IllegalArgumentException(&quot;Truncated key string in mutation&quot;);</span>
+                }
+<span class="fc" id="L73">                String key = new String(keyBytes, StandardCharsets.UTF_8);</span>
+
+<span class="fc" id="L75">                int tag = bais.read();</span>
+<span class="pc bpc" id="L76" title="1 of 2 branches missed.">                if (tag == -1) {</span>
+<span class="nc" id="L77">                    throw new IllegalArgumentException(&quot;Truncated type tag in mutation&quot;);</span>
+                }
+
+<span class="fc" id="L80">                byte[] valLenBuf = new byte[4];</span>
+<span class="pc bpc" id="L81" title="1 of 2 branches missed.">                if (readFully(bais, valLenBuf) &lt; 4) {</span>
+<span class="nc" id="L82">                    throw new IllegalArgumentException(&quot;Truncated value size in mutation&quot;);</span>
+                }
+<span class="fc" id="L84">                int valLen = ByteUtils.readIntBe(valLenBuf, 0);</span>
+<span class="pc bpc" id="L85" title="2 of 4 branches missed.">                if (valLen &lt; 0 || valLen &gt; 16384) {</span>
+<span class="nc" id="L86">                    throw new IllegalArgumentException(&quot;Value size exceeds limits: &quot; + valLen);</span>
+                }
+
+<span class="fc" id="L89">                byte[] valBytes = new byte[valLen];</span>
+<span class="pc bpc" id="L90" title="1 of 2 branches missed.">                if (readFully(bais, valBytes) &lt; valLen) {</span>
+<span class="nc" id="L91">                    throw new IllegalArgumentException(&quot;Truncated value bytes in mutation&quot;);</span>
+                }
+
+                // Merge: overwrite existing key value with latest tag and bytes
+<span class="fc" id="L95">                keyMap.put(key, new CompactedMutation(tag, valBytes));</span>
+            }
+<span class="fc" id="L97">        }</span>
+
+        // 2. Serialize compacted state
+<span class="fc" id="L100">        ByteArrayOutputStream baos = new ByteArrayOutputStream();</span>
+<span class="fc" id="L101">        baos.write(LOG_MAGIC);</span>
+        
+<span class="fc" id="L103">        byte[] verBuf = new byte[2];</span>
+<span class="fc" id="L104">        ByteUtils.writeShortBe(verBuf, 0, (short) 1);</span>
+<span class="fc" id="L105">        baos.write(verBuf);</span>
+
+<span class="fc bfc" id="L107" title="All 2 branches covered.">        for (Map.Entry&lt;String, Map&lt;String, CompactedMutation&gt;&gt; entry : entityMutations.entrySet()) {</span>
+<span class="fc" id="L108">            Map&lt;String, CompactedMutation&gt; keyMap = entry.getValue();</span>
+<span class="pc bpc" id="L109" title="1 of 2 branches missed.">            if (keyMap.isEmpty()) {</span>
+<span class="nc" id="L110">                continue;</span>
+            }
+
+<span class="fc" id="L113">            byte[] nameBytes = entry.getKey().getBytes(StandardCharsets.UTF_8);</span>
+<span class="fc" id="L114">            byte[] nameLenBuf = new byte[2];</span>
+<span class="fc" id="L115">            ByteUtils.writeShortBe(nameLenBuf, 0, (short) nameBytes.length);</span>
+<span class="fc" id="L116">            baos.write(nameLenBuf);</span>
+<span class="fc" id="L117">            baos.write(nameBytes);</span>
+
+<span class="fc" id="L119">            byte[] countBuf = new byte[2];</span>
+<span class="fc" id="L120">            ByteUtils.writeShortBe(countBuf, 0, (short) keyMap.size());</span>
+<span class="fc" id="L121">            baos.write(countBuf);</span>
+
+<span class="fc bfc" id="L123" title="All 2 branches covered.">            for (Map.Entry&lt;String, CompactedMutation&gt; mut : keyMap.entrySet()) {</span>
+<span class="fc" id="L124">                byte[] keyBytes = mut.getKey().getBytes(StandardCharsets.UTF_8);</span>
+<span class="fc" id="L125">                byte[] keyLenBuf = new byte[2];</span>
+<span class="fc" id="L126">                ByteUtils.writeShortBe(keyLenBuf, 0, (short) keyBytes.length);</span>
+<span class="fc" id="L127">                baos.write(keyLenBuf);</span>
+<span class="fc" id="L128">                baos.write(keyBytes);</span>
+
+<span class="fc" id="L130">                CompactedMutation value = mut.getValue();</span>
+<span class="fc" id="L131">                baos.write(value.tag);</span>
+
+<span class="fc" id="L133">                byte[] valLenBuf = new byte[4];</span>
+<span class="fc" id="L134">                ByteUtils.writeIntBe(valLenBuf, 0, value.valBytes.length);</span>
+<span class="fc" id="L135">                baos.write(valLenBuf);</span>
+<span class="fc" id="L136">                baos.write(value.valBytes);</span>
+<span class="fc" id="L137">            }</span>
+<span class="fc" id="L138">        }</span>
+
+<span class="fc" id="L140">        return baos.toByteArray();</span>
+    }
+
+    private static int readFully(InputStream in, byte[] b) throws IOException {
+<span class="fc" id="L144">        int total = 0;</span>
+<span class="fc bfc" id="L145" title="All 2 branches covered.">        while (total &lt; b.length) {</span>
+<span class="fc" id="L146">            int result = in.read(b, total, b.length - total);</span>
+<span class="pc bpc" id="L147" title="1 of 2 branches missed.">            if (result == -1) {</span>
+<span class="nc bnc" id="L148" title="All 2 branches missed.">                return total == 0 ? -1 : total;</span>
+            }
+<span class="fc" id="L150">            total += result;</span>
+<span class="fc" id="L151">        }</span>
+<span class="fc" id="L152">        return total;</span>
+    }
+
+    private static class CompactedMutation {
+        final int tag;
+        final byte[] valBytes;
+
+<span class="fc" id="L159">        CompactedMutation(int tag, byte[] valBytes) {</span>
+<span class="fc" id="L160">            this.tag = tag;</span>
+<span class="fc" id="L161">            this.valBytes = valBytes;</span>
+<span class="fc" id="L162">        }</span>
+    }
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.11.202310140853</span></div></body></html>

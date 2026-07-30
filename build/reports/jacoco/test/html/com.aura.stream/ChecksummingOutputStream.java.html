@@ -1,0 +1,50 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>ChecksummingOutputStream.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">aura-document-processor</a> &gt; <a href="index.source.html" class="el_package">com.aura.stream</a> &gt; <span class="el_source">ChecksummingOutputStream.java</span></div><h1>ChecksummingOutputStream.java</h1><pre class="source lang-java linenums">package com.aura.stream;
+
+import com.aura.internal.Crc32;
+import com.aura.internal.Preconditions;
+import java.io.IOException;
+import java.io.OutputStream;
+
+/**
+ * An OutputStream wrapper that computes a CRC32 checksum as bytes are written.
+ */
+public class ChecksummingOutputStream extends OutputStream {
+    private final OutputStream out;
+<span class="fc" id="L13">    private final Crc32 crc = new Crc32();</span>
+
+<span class="fc" id="L15">    public ChecksummingOutputStream(OutputStream out) {</span>
+<span class="fc" id="L16">        this.out = Preconditions.checkNotNull(out, &quot;Output stream cannot be null&quot;);</span>
+<span class="fc" id="L17">    }</span>
+
+    @Override
+    public void write(int b) throws IOException {
+<span class="nc" id="L21">        out.write(b);</span>
+<span class="nc" id="L22">        crc.update(b);</span>
+<span class="nc" id="L23">    }</span>
+
+    @Override
+    public void write(byte[] b, int off, int len) throws IOException {
+<span class="fc" id="L27">        Preconditions.checkPositionIndexes(off, off + len, b.length);</span>
+<span class="fc" id="L28">        out.write(b, off, len);</span>
+<span class="fc" id="L29">        crc.update(b, off, len);</span>
+<span class="fc" id="L30">    }</span>
+
+    public long getChecksum() {
+<span class="fc" id="L33">        return crc.getValue();</span>
+    }
+
+    public void resetChecksum() {
+<span class="nc" id="L37">        crc.reset();</span>
+<span class="nc" id="L38">    }</span>
+
+    @Override
+    public void flush() throws IOException {
+<span class="nc" id="L42">        out.flush();</span>
+<span class="nc" id="L43">    }</span>
+
+    @Override
+    public void close() throws IOException {
+<span class="nc" id="L47">        out.close();</span>
+<span class="nc" id="L48">    }</span>
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.11.202310140853</span></div></body></html>

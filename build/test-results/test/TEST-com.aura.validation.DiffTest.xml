@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testsuite name="com.aura.validation.DiffTest" tests="1" skipped="0" failures="0" errors="0" timestamp="2026-07-30T12:47:43" hostname="MILTONNARE-1" time="0.011">
+  <properties/>
+  <testcase name="testDiffAndPatch()" classname="com.aura.validation.DiffTest" time="0.011"/>
+  <system-out><![CDATA[]]></system-out>
+  <system-err><![CDATA[]]></system-err>
+</testsuite>

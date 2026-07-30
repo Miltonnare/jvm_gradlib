@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testsuite name="com.aura.model.ModelTest" tests="4" skipped="0" failures="0" errors="0" timestamp="2026-07-30T12:47:42" hostname="MILTONNARE-1" time="0.026">
+  <properties/>
+  <testcase name="testScriptEvaluator()" classname="com.aura.model.ModelTest" time="0.006"/>
+  <testcase name="testDocumentNodes()" classname="com.aura.model.ModelTest" time="0.009"/>
+  <testcase name="testDocumentQuery()" classname="com.aura.model.ModelTest" time="0.005"/>
+  <testcase name="testDocumentGraphAndCycleDetection()" classname="com.aura.model.ModelTest" time="0.002"/>
+  <system-out><![CDATA[]]></system-out>
+  <system-err><![CDATA[]]></system-err>
+</testsuite>

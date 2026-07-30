@@ -1,0 +1,135 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>CssStyleParser.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">aura-document-processor</a> &gt; <a href="index.source.html" class="el_package">com.aura.pipeline</a> &gt; <span class="el_source">CssStyleParser.java</span></div><h1>CssStyleParser.java</h1><pre class="source lang-java linenums">package com.aura.pipeline;
+
+import com.aura.internal.Preconditions;
+import com.aura.model.DocumentNode;
+import com.aura.model.query.QueryExpression;
+import java.util.ArrayList;
+import java.util.LinkedHashMap;
+import java.util.List;
+import java.util.Map;
+
+/**
+ * Parses simplified CSS stylesheets and applies properties to matching DocumentNodes.
+ */
+<span class="fc" id="L14">public class CssStyleParser {</span>
+<span class="fc" id="L15">    private final List&lt;Rule&gt; rules = new ArrayList&lt;&gt;();</span>
+
+    public static class Rule {
+        private final String selector;
+        private final Map&lt;String, String&gt; declarations;
+
+<span class="fc" id="L21">        public Rule(String selector, Map&lt;String, String&gt; declarations) {</span>
+<span class="fc" id="L22">            this.selector = selector;</span>
+<span class="fc" id="L23">            this.declarations = declarations;</span>
+<span class="fc" id="L24">        }</span>
+
+<span class="fc" id="L26">        public String getSelector() { return selector; }</span>
+<span class="fc" id="L27">        public Map&lt;String, String&gt; getDeclarations() { return declarations; }</span>
+    }
+
+    public void parse(String css) {
+<span class="fc" id="L31">        Preconditions.checkNotNull(css, &quot;CSS content cannot be null&quot;);</span>
+<span class="fc" id="L32">        rules.clear();</span>
+
+<span class="fc" id="L34">        int idx = 0;</span>
+<span class="fc" id="L35">        int len = css.length();</span>
+
+<span class="fc bfc" id="L37" title="All 2 branches covered.">        while (idx &lt; len) {</span>
+            // Skip whitespaces and comments
+<span class="fc" id="L39">            idx = skipWhitespaceAndComments(css, idx);</span>
+<span class="pc bpc" id="L40" title="1 of 2 branches missed.">            if (idx &gt;= len) break;</span>
+
+<span class="fc" id="L42">            int braceOpen = css.indexOf('{', idx);</span>
+<span class="pc bpc" id="L43" title="1 of 2 branches missed.">            if (braceOpen == -1) {</span>
+<span class="nc" id="L44">                throw new IllegalArgumentException(&quot;Malformed CSS: missing open brace '{' for selector at &quot; + idx);</span>
+            }
+
+<span class="fc" id="L47">            String selector = css.substring(idx, braceOpen).trim();</span>
+<span class="fc" id="L48">            int braceClose = css.indexOf('}', braceOpen);</span>
+<span class="fc bfc" id="L49" title="All 2 branches covered.">            if (braceClose == -1) {</span>
+<span class="fc" id="L50">                throw new IllegalArgumentException(&quot;Malformed CSS: missing close brace '}' for selector: &quot; + selector);</span>
+            }
+
+<span class="fc" id="L53">            String block = css.substring(braceOpen + 1, braceClose).trim();</span>
+<span class="fc" id="L54">            Map&lt;String, String&gt; declarations = parseDeclarations(block);</span>
+<span class="fc" id="L55">            rules.add(new Rule(selector, declarations));</span>
+
+<span class="fc" id="L57">            idx = braceClose + 1;</span>
+<span class="fc" id="L58">        }</span>
+<span class="fc" id="L59">    }</span>
+
+    public void apply(DocumentNode root) {
+<span class="fc" id="L62">        Preconditions.checkNotNull(root, &quot;Root node cannot be null&quot;);</span>
+<span class="fc bfc" id="L63" title="All 2 branches covered.">        for (Rule rule : rules) {</span>
+            // Translate CSS selectors into AuraQuery expressions
+<span class="fc" id="L65">            String queryStr = translateSelector(rule.getSelector());</span>
+            try {
+<span class="fc" id="L67">                QueryExpression query = new QueryExpression(queryStr);</span>
+<span class="fc" id="L68">                List&lt;DocumentNode&gt; matched = query.evaluate(root);</span>
+<span class="fc bfc" id="L69" title="All 2 branches covered.">                for (DocumentNode node : matched) {</span>
+<span class="fc bfc" id="L70" title="All 2 branches covered.">                    for (Map.Entry&lt;String, String&gt; decl : rule.getDeclarations().entrySet()) {</span>
+<span class="fc" id="L71">                        node.setAttribute(decl.getKey(), decl.getValue());</span>
+<span class="fc" id="L72">                    }</span>
+<span class="fc" id="L73">                }</span>
+<span class="nc" id="L74">            } catch (Exception ignored) {</span>
+                // Ignore matching errors for complex CSS rules not fully supported by AuraQuery
+<span class="fc" id="L76">            }</span>
+<span class="fc" id="L77">        }</span>
+<span class="fc" id="L78">    }</span>
+
+    private Map&lt;String, String&gt; parseDeclarations(String block) {
+<span class="fc" id="L81">        Map&lt;String, String&gt; map = new LinkedHashMap&lt;&gt;();</span>
+<span class="fc" id="L82">        String[] decls = block.split(&quot;;&quot;);</span>
+<span class="fc bfc" id="L83" title="All 2 branches covered.">        for (String decl : decls) {</span>
+<span class="fc" id="L84">            String trimmed = decl.trim();</span>
+<span class="pc bpc" id="L85" title="1 of 2 branches missed.">            if (trimmed.isEmpty()) continue;</span>
+
+<span class="fc" id="L87">            int colon = trimmed.indexOf(':');</span>
+<span class="pc bpc" id="L88" title="1 of 2 branches missed.">            if (colon == -1) {</span>
+<span class="nc" id="L89">                throw new IllegalArgumentException(&quot;Malformed CSS declaration: missing colon ':' in: &quot; + trimmed);</span>
+            }
+
+<span class="fc" id="L92">            String key = trimmed.substring(0, colon).trim();</span>
+<span class="fc" id="L93">            String val = trimmed.substring(colon + 1).trim();</span>
+<span class="fc" id="L94">            map.put(key, val);</span>
+        }
+<span class="fc" id="L96">        return map;</span>
+    }
+
+    private String translateSelector(String selector) {
+        // Simple translation:
+        // &quot;#id&quot; -&gt; &quot;//*[@id='id']&quot;
+        // &quot;.class&quot; -&gt; &quot;//*[@class='class']&quot;
+        // &quot;tag&quot; -&gt; &quot;//tag&quot;
+<span class="fc" id="L104">        String sel = selector.trim();</span>
+<span class="fc bfc" id="L105" title="All 2 branches covered.">        if (sel.startsWith(&quot;#&quot;)) {</span>
+<span class="fc" id="L106">            return &quot;//*[@id='&quot; + sel.substring(1) + &quot;']&quot;;</span>
+<span class="pc bpc" id="L107" title="1 of 2 branches missed.">        } else if (sel.startsWith(&quot;.&quot;)) {</span>
+<span class="fc" id="L108">            return &quot;//*[@class='&quot; + sel.substring(1) + &quot;']&quot;;</span>
+        }
+<span class="nc" id="L110">        return &quot;//&quot; + sel;</span>
+    }
+
+    private int skipWhitespaceAndComments(String css, int start) {
+<span class="fc" id="L114">        int i = start;</span>
+<span class="fc" id="L115">        int len = css.length();</span>
+<span class="pc bpc" id="L116" title="1 of 2 branches missed.">        while (i &lt; len) {</span>
+<span class="fc" id="L117">            char c = css.charAt(i);</span>
+<span class="fc bfc" id="L118" title="All 2 branches covered.">            if (Character.isWhitespace(c)) {</span>
+<span class="fc" id="L119">                i++;</span>
+<span class="fc" id="L120">                continue;</span>
+            }
+<span class="pc bpc" id="L122" title="2 of 6 branches missed.">            if (c == '/' &amp;&amp; i + 1 &lt; len &amp;&amp; css.charAt(i + 1) == '*') {</span>
+<span class="fc" id="L123">                int commentEnd = css.indexOf(&quot;*/&quot;, i + 2);</span>
+<span class="pc bpc" id="L124" title="1 of 2 branches missed.">                if (commentEnd == -1) {</span>
+<span class="nc" id="L125">                    throw new IllegalArgumentException(&quot;Unclosed CSS comment starting at &quot; + i);</span>
+                }
+<span class="fc" id="L127">                i = commentEnd + 2;</span>
+<span class="fc" id="L128">                continue;</span>
+            }
+            break;
+        }
+<span class="fc" id="L132">        return i;</span>
+    }
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.11.202310140853</span></div></body></html>
