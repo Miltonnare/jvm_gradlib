@@ -44,7 +44,7 @@ public class MetadataTest {
     }
 
     @Test
-    public void testSecurityLimits() {
+    public void testNestingLimits() {
         // Test nesting recursion depth limit
         Map<String, MetadataValue> root = new LinkedHashMap<>();
         Map<String, MetadataValue> current = root;
