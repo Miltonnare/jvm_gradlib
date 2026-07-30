@@ -50,10 +50,3 @@ The processing pipeline connects configuration parsing, document tree generation
          ▼
    TextExtractor / HTML / Markdown Rendering
 ```
-
-## Parsing Limits and Constraints
-
-To prevent resource exhaustion during parsing operations, ADP enforces the following limits:
-- **Nesting Limits**: The Xon parser, template parser, and Bsm reader enforce recursion depth limits (64 and 16 respectively).
-- **Read Boundary Limits**: `BoundedInputStream` wraps decompression sources to limit read size.
-- **Decompression Checks**: Codecs check uncompressed sizes before byte array allocations.

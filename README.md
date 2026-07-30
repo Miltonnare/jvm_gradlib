@@ -43,5 +43,4 @@ export SRC=$(pwd)
 3. [Build Guide](BUILD.md) - Compilation instructions.
 4. [Testing Manual](TESTING.md) - Unit test and coverage guides.
 5. [Project Directory Structure](PROJECT_STRUCTURE.md) - File and folder layouts.
-6. [Security Policy](SECURITY.md) - Bounds checking and overflow protection details.
-7. [Contributing Guidelines](CONTRIBUTING.md) - Guidelines for code style and tests.
+6. [Contributing Guidelines](CONTRIBUTING.md) - Guidelines for code style and tests.

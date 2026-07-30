@@ -88,7 +88,6 @@ project/
 ├── Architecture.md            # Architecture and package descriptions
 ├── FORMAT_SPEC.md             # Format specifications guide
 ├── CONTRIBUTING.md            # Guidelines for contributions
-├── SECURITY.md                # Security policy and inputs limits
 ├── BUILD.md                   # Compilation and build instructions
 ├── TESTING.md                 # Testing and coverage details
 └── LICENSE                    # Project license terms

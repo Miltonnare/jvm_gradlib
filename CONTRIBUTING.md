@@ -4,9 +4,7 @@ We welcome contributions to the Aura Document Processor project. To maintain cod
 
 ## 1. Development Principles
 
-*   **Zero Runtime External Dependencies**: The core processing library must remain free of runtime third-party libraries. If you need JSON, parsing tools, or custom encryption wrappers, implement them cleanly inside first-party Java source packages.
-*   **Defensive Parsing**: Ensure all binary decoders validate offsets, size calculations, and string allocation limits before performing array reads/writes.
-*   **Topological and Cycle Checks**: When adding new document graph nodes or relations, verify cycle-detection rules are maintained.
+*   **Zero Runtime External Dependencies**: The core processing library must remain free of runtime third-party libraries. If you need parsing or helper utilities, implement them cleanly inside first-party Java source packages.
 
 ## 2. Coding Style & Static Analysis
 
